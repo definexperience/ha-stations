@@ -1,0 +1,11 @@
+__pycache__/
+*.pyc
+.venv/
+node_modules/
+dev/tokens.json
+dev/haconf/*
+!dev/haconf/configuration.yaml
+!dev/haconf/custom_components/
+dev/haconf/custom_components/stations
+.ruff_cache/
+.pytest_cache/

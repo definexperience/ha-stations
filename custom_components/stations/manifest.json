@@ -1,0 +1,13 @@
+{
+  "domain": "stations",
+  "name": "Stations",
+  "codeowners": ["@definexperience"],
+  "config_flow": true,
+  "dependencies": ["http", "frontend", "panel_custom", "websocket_api"],
+  "documentation": "https://github.com/definexperience/ha-stations",
+  "integration_type": "device",
+  "iot_class": "calculated",
+  "issue_tracker": "https://github.com/definexperience/ha-stations/issues",
+  "requirements": [],
+  "version": "1.2.3"
+}

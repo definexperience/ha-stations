@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "Nieuw station",
+        "description": "Een station bundelt de apparaten die in één meubel zijn ingebouwd. Elk apparaat of elke entiteit met het label van het station hoort bij het station. Laat het label leeg om een nieuw label met de naam van het station aan te maken.",
+        "data": {
+          "name": "Naam",
+          "label_id": "Label",
+          "area_id": "Ruimte"
+        },
+        "data_description": {
+          "label_id": "Kies een bestaand label, of laat leeg om er een aan te maken.",
+          "area_id": "Waar het station staat."
+        }
+      }
+    },
+    "error": {
+      "name_required": "Vul een naam in."
+    },
+    "abort": {
+      "already_configured": "Dit label hoort al bij een ander station."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Label van het station",
+        "description": "Apparaten en entiteiten met dit label horen bij het station.",
+        "data": {
+          "label_id": "Label"
+        }
+      }
+    },
+    "error": {
+      "label_in_use": "Dit label hoort al bij een ander station."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "devices": {
+        "name": "Apparaten"
+      },
+      "unavailable_devices": {
+        "name": "Onbereikbare apparaten"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Status"
+      }
+    },
+    "switch": {
+      "power": {
+        "name": "Voeding"
+      }
+    }
+  }
+}

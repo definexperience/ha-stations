@@ -1,0 +1,59 @@
+{
+  "config": {
+    "step": {
+      "user": {
+        "title": "New station",
+        "description": "A station groups the devices that are built into one piece of furniture. Every device or entity that carries the station's label is part of the station. Leave the label empty to create a new label with the station's name.",
+        "data": {
+          "name": "Name",
+          "label_id": "Label",
+          "area_id": "Area"
+        },
+        "data_description": {
+          "label_id": "Use an existing label, or leave empty to create one.",
+          "area_id": "Where the station stands."
+        }
+      }
+    },
+    "error": {
+      "name_required": "Enter a name."
+    },
+    "abort": {
+      "already_configured": "This label already belongs to another station."
+    }
+  },
+  "options": {
+    "step": {
+      "init": {
+        "title": "Station label",
+        "description": "Devices and entities with this label belong to the station.",
+        "data": {
+          "label_id": "Label"
+        }
+      }
+    },
+    "error": {
+      "label_in_use": "This label already belongs to another station."
+    }
+  },
+  "entity": {
+    "sensor": {
+      "devices": {
+        "name": "Devices"
+      },
+      "unavailable_devices": {
+        "name": "Unavailable devices"
+      }
+    },
+    "binary_sensor": {
+      "problem": {
+        "name": "Status"
+      }
+    },
+    "switch": {
+      "power": {
+        "name": "Power"
+      }
+    }
+  }
+}

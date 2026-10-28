@@ -1,0 +1,14 @@
+homeassistant:
+  name: Werkplaats
+  time_zone: Europe/Amsterdam
+  country: NL
+  unit_system: metric
+frontend:
+config:
+http:
+  server_port: 8123
+fakedev:
+logger:
+  default: warning
+  logs:
+    custom_components.stations: debug
