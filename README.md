@@ -168,6 +168,8 @@ pytest
 2. Push a tag with the same version, for example `git tag v1.2.3 && git push origin v1.2.3`.
 3. The **Release** workflow checks that the tag matches the manifest and publishes a GitHub release. HACS installations then offer the update.
 
+For a test version, use a version with `b` (beta) and a number, for example `1.3.0b1` in the manifest and tag `v1.3.0b1`. It is published as a GitHub pre-release. HACS only offers it where **Show beta versions** is switched on for Stations (HACS → Stations → ⋮ → Redownload → Show beta versions), so other installations stay on the last normal release.
+
 The **Validate** workflow runs hassfest, the HACS checks and the test suite on every push.
 
 ## Licence

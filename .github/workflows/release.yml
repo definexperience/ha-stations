@@ -2,6 +2,8 @@ name: Release
 
 # Push a tag like v1.2.2 (matching the version in manifest.json) to publish a
 # GitHub release. HACS offers each release as an update.
+# A version with a letter in it, like v1.3.0b1, is published as a pre-release:
+# HACS only offers it when "Show beta versions" is on for this repository.
 on:
   push:
     tags: ["v*"]
@@ -20,6 +22,15 @@ jobs:
           if [ "v$version" != "$GITHUB_REF_NAME" ]; then
             echo "Tag $GITHUB_REF_NAME does not match manifest version $version"; exit 1
           fi
+      - name: Pre-release when the version has a letter (b1, rc1)
+        id: kind
+        run: |
+          if [[ "${GITHUB_REF_NAME#v}" =~ [a-zA-Z] ]]; then
+            echo "prerelease=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "prerelease=false" >> "$GITHUB_OUTPUT"
+          fi
       - uses: softprops/action-gh-release@v2
         with:
           generate_release_notes: true
+          prerelease: ${{ steps.kind.outputs.prerelease }}
