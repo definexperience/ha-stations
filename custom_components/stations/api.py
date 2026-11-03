@@ -2,9 +2,13 @@
 
 from __future__ import annotations
 
+from dataclasses import dataclass
 from datetime import timedelta
 from http import HTTPStatus
+from pathlib import Path
 import secrets
+import shutil
+import time
 from typing import TYPE_CHECKING, Any
 from urllib.parse import quote, urlparse
 
@@ -30,6 +34,7 @@ from homeassistant.helpers.dispatcher import (
 from .const import (
     ALLOWED_CONTENT_TYPES,
     DOMAIN,
+    FILES_DIR,
     MAX_UPLOAD_BYTES,
     SIGNAL_STATIONS_CHANGED,
 )
@@ -204,6 +209,8 @@ def async_register_api(hass: HomeAssistant) -> None:
         websocket_api.async_register_command(hass, command)
     hass.http.register_view(StationsFilesView())
     hass.http.register_view(StationsFileView())
+    hass.http.register_view(StationsUploadStartView())
+    hass.http.register_view(StationsUploadView())
 
 
 # ------------------------------------------------------------------ websocket
@@ -680,37 +687,230 @@ class StationsFilesView(HomeAssistantView):
             if part.name == "caption":
                 caption = (await part.text()).strip()[:500]
             elif part.name == "file":
-                filename = (part.filename or "file").replace("/", "_").replace("\\", "_")
+                filename = _clean_filename(part.filename)
                 while chunk := await part.read_chunk(256 * 1024):
                     data.extend(chunk)
                     if len(data) > MAX_UPLOAD_BYTES:
                         return self.json_message(
-                            f"File is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB",
+                            MSG_TOO_LARGE.format(name=filename),
                             HTTPStatus.REQUEST_ENTITY_TOO_LARGE,
                         )
         if filename is None or not data:
             return self.json_message("No file received", HTTPStatus.BAD_REQUEST)
-
-        content_type = _sniff(bytes(data[:4096]))
-        if content_type not in ALLOWED_CONTENT_TYPES:
-            return self.json_message(
-                "Only photos (JPEG, PNG, GIF, WebP), PDF and plain text files are allowed",
-                HTTPStatus.UNSUPPORTED_MEDIA_TYPE,
-            )
-
-        record = await _data(hass).store.async_add_file(
-            entry_id,
-            secrets.token_hex(8),
-            filename=filename[:200],
-            content_type=content_type,
-            ext=ALLOWED_CONTENT_TYPES[content_type],
-            size=len(data),
-            caption=caption,
-            user=_user_name(request.get("hass_user")),
-            data=bytes(data),
+        return await _async_store_upload(
+            self, hass, entry_id, filename, caption, request.get("hass_user"), bytes(data)
         )
-        async_dispatcher_send(hass, SIGNAL_STATIONS_CHANGED, entry_id)
-        return self.json({"id": record["id"]}, HTTPStatus.CREATED)
+
+
+MSG_WRONG_TYPE = "{name} can't be added: only photos (JPEG, PNG, GIF, WebP), PDF and plain text files are allowed"
+MSG_TOO_LARGE = f"{{name}} is larger than {MAX_UPLOAD_BYTES // (1024 * 1024)} MB"
+
+
+def _clean_filename(name: str | None) -> str:
+    return ((name or "file").replace("/", "_").replace("\\", "_"))[:200] or "file"
+
+
+async def _async_store_upload(
+    view: HomeAssistantView,
+    hass: HomeAssistant,
+    entry_id: str,
+    filename: str,
+    caption: str,
+    hass_user: Any,
+    data: bytes,
+) -> web.Response:
+    """Check the type of a received file and add it to the station."""
+    content_type = _sniff(data[:4096])
+    if content_type not in ALLOWED_CONTENT_TYPES:
+        return view.json_message(
+            MSG_WRONG_TYPE.format(name=filename), HTTPStatus.UNSUPPORTED_MEDIA_TYPE
+        )
+    record = await _data(hass).store.async_add_file(
+        entry_id,
+        secrets.token_hex(8),
+        filename=filename,
+        content_type=content_type,
+        ext=ALLOWED_CONTENT_TYPES[content_type],
+        size=len(data),
+        caption=caption,
+        user=_user_name(hass_user),
+        data=data,
+    )
+    async_dispatcher_send(hass, SIGNAL_STATIONS_CHANGED, entry_id)
+    return view.json({"id": record["id"]}, HTTPStatus.CREATED)
+
+
+# ------------------------------------------------------------ chunked uploads
+# Reverse proxies and tunnels often cap a request at about 1 MB. The panel
+# therefore sends a file in pieces: start, then each piece in order, then
+# finish. Pieces arrive at an offset, so a piece that failed halfway can be
+# sent again without corrupting the file.
+UPLOAD_CHUNK_BYTES = 512 * 1024
+UPLOAD_EXPIRY_SECONDS = 3600
+
+
+@dataclass
+class _Upload:
+    entry_id: str
+    user_id: str | None
+    filename: str
+    caption: str
+    size: int
+    path: Path
+    received: int = 0
+    touched: float = 0.0
+
+
+def uploads_dir(hass: HomeAssistant) -> Path:
+    """Folder for files that are still being received."""
+    return Path(hass.config.path(FILES_DIR, ".uploads"))
+
+
+def _uploads(hass: HomeAssistant) -> dict[str, _Upload]:
+    return hass.data.setdefault(f"{DOMAIN}_uploads", {})
+
+
+async def async_clear_uploads(hass: HomeAssistant) -> None:
+    """Remove leftovers of unfinished uploads (at start-up)."""
+    folder = uploads_dir(hass)
+    await hass.async_add_executor_job(lambda: shutil.rmtree(folder, ignore_errors=True))
+
+
+async def _async_expire_uploads(hass: HomeAssistant) -> None:
+    now = time.monotonic()
+    uploads = _uploads(hass)
+    stale = [uid for uid, up in uploads.items() if now - up.touched > UPLOAD_EXPIRY_SECONDS]
+    paths = [uploads.pop(uid).path for uid in stale]
+    if paths:
+        await hass.async_add_executor_job(
+            lambda: [p.unlink(missing_ok=True) for p in paths]
+        )
+
+
+class StationsUploadStartView(HomeAssistantView):
+    """Start an upload that is sent in pieces."""
+
+    url = "/api/stations/{entry_id}/uploads"
+    name = "api:stations:uploads"
+
+    async def post(self, request: web.Request, entry_id: str) -> web.Response:
+        """Take {filename, size, caption}; return the upload id and piece size."""
+        hass: HomeAssistant = request.app["hass"]
+        if _station(hass, entry_id) is None:
+            return self.json_message("Station not found", HTTPStatus.NOT_FOUND)
+        try:
+            body = await request.json()
+            filename = _clean_filename(str(body["filename"]))
+            size = int(body["size"])
+            caption = str(body.get("caption") or "").strip()[:500]
+        except (ValueError, KeyError, TypeError):
+            return self.json_message("Invalid upload request", HTTPStatus.BAD_REQUEST)
+        if size <= 0:
+            return self.json_message(f"{filename} is empty", HTTPStatus.BAD_REQUEST)
+        if size > MAX_UPLOAD_BYTES:
+            return self.json_message(
+                MSG_TOO_LARGE.format(name=filename), HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+            )
+        await _async_expire_uploads(hass)
+        upload_id = secrets.token_hex(12)
+        folder = uploads_dir(hass)
+        path = folder / f"{upload_id}.part"
+
+        def _create() -> None:
+            folder.mkdir(parents=True, exist_ok=True)
+            path.write_bytes(b"")
+
+        await hass.async_add_executor_job(_create)
+        user = request.get("hass_user")
+        _uploads(hass)[upload_id] = _Upload(
+            entry_id=entry_id,
+            user_id=getattr(user, "id", None),
+            filename=filename,
+            caption=caption,
+            size=size,
+            path=path,
+            touched=time.monotonic(),
+        )
+        return self.json(
+            {"upload_id": upload_id, "chunk_size": UPLOAD_CHUNK_BYTES},
+            HTTPStatus.CREATED,
+        )
+
+
+class StationsUploadView(HomeAssistantView):
+    """Receive one piece (PUT), finish (POST) or cancel (DELETE) an upload."""
+
+    url = "/api/stations/{entry_id}/uploads/{upload_id}"
+    name = "api:stations:upload"
+
+    def _get(self, request: web.Request, entry_id: str, upload_id: str) -> _Upload | None:
+        up = _uploads(request.app["hass"]).get(upload_id)
+        user = request.get("hass_user")
+        if up is None or up.entry_id != entry_id or up.user_id != getattr(user, "id", None):
+            return None
+        return up
+
+    def _gone(self) -> web.Response:
+        return self.json_message(
+            "This upload expired or was cancelled. Start it again.", HTTPStatus.NOT_FOUND
+        )
+
+    async def put(self, request: web.Request, entry_id: str, upload_id: str) -> web.Response:
+        """Append a piece at ?offset=N (must equal what was received so far)."""
+        hass: HomeAssistant = request.app["hass"]
+        if (up := self._get(request, entry_id, upload_id)) is None:
+            return self._gone()
+        try:
+            offset = int(request.query.get("offset", "-1"))
+        except ValueError:
+            offset = -1
+        if offset != up.received:
+            # The panel resumes from "received".
+            return self.json(
+                {"message": "Piece out of order", "received": up.received},
+                HTTPStatus.CONFLICT,
+            )
+        data = await request.read()
+        if len(data) > UPLOAD_CHUNK_BYTES or up.received + len(data) > up.size:
+            return self.json_message("Piece too large", HTTPStatus.REQUEST_ENTITY_TOO_LARGE)
+
+        def _append() -> None:
+            with up.path.open("r+b") as f:
+                f.seek(offset)
+                f.write(data)
+                f.truncate()
+
+        await hass.async_add_executor_job(_append)
+        up.received += len(data)
+        up.touched = time.monotonic()
+        return self.json({"received": up.received})
+
+    async def post(self, request: web.Request, entry_id: str, upload_id: str) -> web.Response:
+        """Finish: check the file and add it to the station."""
+        hass: HomeAssistant = request.app["hass"]
+        if (up := self._get(request, entry_id, upload_id)) is None:
+            return self._gone()
+        if up.received != up.size:
+            return self.json(
+                {"message": f"{up.filename} is incomplete", "received": up.received},
+                HTTPStatus.CONFLICT,
+            )
+        _uploads(hass).pop(upload_id, None)
+        data = await hass.async_add_executor_job(up.path.read_bytes)
+        await hass.async_add_executor_job(lambda: up.path.unlink(missing_ok=True))
+        if _station(hass, entry_id) is None:
+            return self.json_message("Station not found", HTTPStatus.NOT_FOUND)
+        return await _async_store_upload(
+            self, hass, entry_id, up.filename, up.caption, request.get("hass_user"), data
+        )
+
+    async def delete(self, request: web.Request, entry_id: str, upload_id: str) -> web.Response:
+        """Cancel an upload."""
+        hass: HomeAssistant = request.app["hass"]
+        if (up := self._get(request, entry_id, upload_id)) is not None:
+            _uploads(hass).pop(upload_id, None)
+            await hass.async_add_executor_job(lambda: up.path.unlink(missing_ok=True))
+        return self.json({})
 
 
 class StationsFileView(HomeAssistantView):

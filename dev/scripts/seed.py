@@ -44,13 +44,18 @@ async def main():
                 if m.get("id") == n[0] and m["type"] == "result":
                     if not m["success"]: print("ERR", msg, m)
                     return m.get("result")
+        floors = {}
+        for f, level in (("Basement", -1), ("Ground floor", 0)):
+            floors[f] = (await call(type="config/floor_registry/create", name=f, level=level))["floor_id"]
         areas = {}
-        for a in ("Workshop", "Server room", "Basement"):
-            areas[a] = (await call(type="config/area_registry/create", name=a))["area_id"]
+        for a, f in (("Workshop", "Ground floor"), ("Server room", "Ground floor"), ("Basement", "Basement")):
+            areas[a] = (await call(type="config/area_registry/create", name=a, floor_id=floors[f]))["area_id"]
         async def station(name, area):
             r = await s.post(B+"/api/config/config_entries/flow", json={"handler":"stations"}, headers=H)
             fid = (await r.json())["flow_id"]
-            r = await s.post(f"{B}/api/config/config_entries/flow/{fid}", json={"name":name, "area_id":areas[area]}, headers=H)
+            labels = {l["name"]: l["label_id"] for l in await call(type="config/label_registry/list")}
+            body = {"name": name, "area_id": areas[area], "power_on_label": labels["Power on"], "power_off_label": labels["Power off"]}
+            r = await s.post(f"{B}/api/config/config_entries/flow/{fid}", json=body, headers=H)
             return (await r.json())["result"]["entry_id"]
         a = await station("Pump station A", "Basement")
         b = await station("Network cabinet", "Server room")
@@ -104,9 +109,8 @@ Basement, north wall, behind the blue door. Key is in the key box at reception (
         form = aiohttp.FormData(); form.add_field("file", photo(1600, 1000, (60,60,90), "rack"), filename="rack.jpg", content_type="image/jpeg")
         await s.post(f"{B}/api/stations/{b}/files", data=form, headers=H)
         await call(type="stations/save_docs", entry_id=b, markdown="## Rack layout\n1. Patch panel\n2. Switch\n3. UPS\n")
-        # Labels as used at the customer for power on / power off
-        on = await call(type="config/label_registry/create", name="power on", icon="mdi:power", color="green")
-        off = await call(type="config/label_registry/create", name="power off", icon="mdi:power-off", color="red")
-        await call(type="config/entity_registry/update", entity_id="switch.pump_controller_relay", labels=[on["label_id"], off["label_id"]])
+        # The station form creates the "Power on" / "Power off" labels; put them on the pump relay
+        labels = {l["name"]: l["label_id"] for l in await call(type="config/label_registry/list")}
+        await call(type="config/entity_registry/update", entity_id="switch.pump_controller_relay", labels=[labels["Power on"], labels["Power off"]])
         print(json.dumps({"a": a, "b": b, "c": c}))
 asyncio.run(main())

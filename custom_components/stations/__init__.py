@@ -18,7 +18,7 @@ from homeassistant.helpers import config_validation as cv, device_registry as dr
 from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 
-from .api import async_register_api
+from .api import async_clear_uploads, async_register_api
 from .const import (
     CONF_AREA_ID,
     CONF_POWER_OFF_LABEL,
@@ -51,6 +51,7 @@ async def async_setup(hass: HomeAssistant, config: ConfigType) -> bool:
     await store.async_load()
     hass.data[DOMAIN] = StationsData(store=store)
     async_register_api(hass)
+    await async_clear_uploads(hass)
     await async_register_panel(hass)
     return True
 

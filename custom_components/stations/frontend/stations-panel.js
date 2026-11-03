@@ -59,6 +59,7 @@ const I18N = {
     no_stations: "No stations yet.",
     no_stations_admin: "Add a station under Settings → Devices & services, or with the button above.",
     no_match: "No station matches your search.",
+    image_failed: "Photo couldn't load. Tap to retry.",
     sort: "Sort",
     sort_name: "Name",
     sort_area: "Area",
@@ -95,6 +96,12 @@ const I18N = {
     drop_here: "Drop photos or files here",
     uploading: (name) => `Uploading ${name}…`,
     upload_failed: (name, why) => `Upload of ${name} failed: ${why}`,
+    uploading_pct: (name, pct) => `Uploading ${name}… ${pct}%`,
+    upload_summary: (ok, total, why) => `${ok} of ${total} files uploaded. ${why}`,
+    err_connection: (name) => `Connection lost while uploading ${name}. Try again.`,
+    err_signed_out: "You're no longer signed in. Reload the page.",
+    err_too_large: (name, mb) => `${name} is larger than ${mb} MB`,
+    err_wrong_type: (name) => `${name} can't be added: only photos (JPEG, PNG, GIF, WebP), PDF and plain text files are allowed`,
     no_files: "No photos or files yet. Upload photos of the station, wiring diagrams or datasheets.",
     caption: "Caption",
     set_cover: "Use as cover",
@@ -210,6 +217,7 @@ Where it stands and how to reach it.
     no_stations: "Nog geen stations.",
     no_stations_admin: "Voeg een station toe via Instellingen → Apparaten & diensten, of met de knop hierboven.",
     no_match: "Geen station gevonden.",
+    image_failed: "Foto kon niet laden. Tik om opnieuw te proberen.",
     sort: "Sorteren",
     sort_name: "Naam",
     sort_area: "Ruimte",
@@ -246,6 +254,12 @@ Where it stands and how to reach it.
     drop_here: "Sleep foto's of bestanden hierheen",
     uploading: (name) => `${name} uploaden…`,
     upload_failed: (name, why) => `Uploaden van ${name} mislukt: ${why}`,
+    uploading_pct: (name, pct) => `${name} uploaden… ${pct}%`,
+    upload_summary: (ok, total, why) => `${ok} van ${total} bestanden geüpload. ${why}`,
+    err_connection: (name) => `Verbinding verbroken tijdens het uploaden van ${name}. Probeer het opnieuw.`,
+    err_signed_out: "Je bent niet meer ingelogd. Laad de pagina opnieuw.",
+    err_too_large: (name, mb) => `${name} is groter dan ${mb} MB`,
+    err_wrong_type: (name) => `${name} kan niet worden toegevoegd: alleen foto's (JPEG, PNG, GIF, WebP), PDF en tekstbestanden`,
     no_files: "Nog geen foto's of bestanden. Upload foto's van het station, aansluitschema's of datasheets.",
     caption: "Bijschrift",
     set_cover: "Als omslagfoto",
@@ -321,6 +335,10 @@ const LABEL_COLORS = {
 };
 
 const MAX_IMAGE_EDGE = 2560;
+const MAX_UPLOAD_MB = 15;
+const UPLOAD_TYPES = ["image/jpeg", "image/png", "image/gif", "image/webp", "application/pdf", "text/plain"];
+
+class UploadError extends Error {}
 
 const esc = (value) =>
   String(value ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
@@ -545,6 +563,11 @@ ha-icon { --mdc-icon-size: 20px; flex: none; }
 .group-head { display: flex; align-items: center; gap: 8px; margin: 24px 0 10px; font-size: 15px; font-weight: 500; color: var(--st-muted); }
 .group-head:first-child { margin-top: 0; }
 .group-head .count { font-weight: 400; }
+.img-failed {
+  position: absolute; inset: 0; display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px;
+  padding: 10px; text-align: center; font-size: 12px; color: var(--st-muted); background: var(--st-chip); cursor: pointer;
+}
+.img-failed ha-icon { --mdc-icon-size: 32px; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .station-card { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; text-decoration: none; color: inherit; transition: box-shadow .15s, transform .15s; }
 .station-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); transform: translateY(-1px); }
@@ -777,6 +800,7 @@ class StationsPanel extends HTMLElement {
     this._openMore = new Set();
     this._lightbox = null; // file id
     this._uploads = [];
+    this._uploadSeq = 0;
     this._loadToken = 0;
     this._useHaMarkdown = false;
     this._onBeforeUnload = (e) => {
@@ -874,6 +898,8 @@ class StationsPanel extends HTMLElement {
       this.shadowRoot.addEventListener("click", (e) => this._handleClick(e));
       this.shadowRoot.addEventListener("input", (e) => this._handleInput(e));
       this.shadowRoot.addEventListener("change", (e) => this._handleChange(e));
+      // "error" doesn't bubble, so listen in the capture phase for failed images.
+      this.shadowRoot.addEventListener("error", (e) => this._imageFailed(e.target), true);
       this.shadowRoot.addEventListener("dragover", (e) => this._handleDrag(e, true));
       this.shadowRoot.addEventListener("dragleave", (e) => this._handleDrag(e, false));
       this.shadowRoot.addEventListener("drop", (e) => this._handleDrop(e));
@@ -1198,7 +1224,7 @@ class StationsPanel extends HTMLElement {
   _stationCardTemplate(st, match) {
     const color = labelColor(st.label_color);
     const cover = st.cover_url
-      ? `<img src="${esc(st.cover_url)}" alt="" loading="lazy">`
+      ? `<img src="${esc(st.cover_small_url || st.cover_url)}" alt="" loading="lazy">`
       : `<div class="placeholder" style="background:color-mix(in srgb, ${color} 22%, transparent);color:${color}"><ha-icon icon="${esc(st.label_icon || "stations:logo")}"></ha-icon></div>`;
     return `
       <a class="card station-card" href="/${this._panelPath()}/${esc(st.entry_id)}" data-action="open-station" data-id="${esc(st.entry_id)}">
@@ -1677,14 +1703,14 @@ class StationsPanel extends HTMLElement {
       .map((f) => {
         const isImage = f.content_type.startsWith("image/");
         const inner = isImage
-          ? `<img src="${esc(f.url)}" alt="${esc(f.caption || f.filename)}" loading="lazy">`
+          ? `<img src="${esc(f.small_url || f.url)}" alt="${esc(f.caption || f.filename)}" loading="lazy">`
           : `<div class="doc"><ha-icon icon="${f.content_type === "application/pdf" ? "mdi:file-pdf-box" : "mdi:file-document-outline"}"></ha-icon>${esc(f.filename)}<span class="muted">${formatSize(f.size)}</span></div>`;
         return `<button class="tile" data-action="open-file" data-id="${esc(f.id)}" title="${esc(f.caption || f.filename)}">${inner}${
           f.id === this._detail.cover ? `<span class="star" title="${esc(this.t("is_cover"))}"><ha-icon icon="mdi:star"></ha-icon></span>` : ""
         }${f.caption && isImage ? `<span class="cap">${esc(f.caption)}</span>` : ""}</button>`;
       })
       .join("");
-    const pending = this._uploads.map((u) => `<div class="tile pending">${esc(this.t("uploading", u))}</div>`).join("");
+    const pending = this._uploads.map((u) => `<div class="tile pending" id="up-${u.id}">${esc(this._uploadText(u))}</div>`).join("");
     return `
       <div class="card-head"><h2><ha-icon icon="mdi:image-multiple-outline"></ha-icon>${esc(this.t("files"))} <span class="count">${files.length}</span></h2>
         <button class="btn text" data-action="upload"><ha-icon icon="mdi:upload"></ha-icon>${esc(this.t("upload"))}</button>
@@ -1935,6 +1961,12 @@ class StationsPanel extends HTMLElement {
     const action = el.dataset.action;
     const d = this._detail;
     switch (action) {
+      case "img-retry":
+        // Inside a station card (a link) or a gallery tile: retry only.
+        e.preventDefault();
+        e.stopPropagation();
+        this._retryImage(el);
+        break;
       case "back":
         this._navigate(`/${this._panelPath()}`);
         break;
@@ -2215,6 +2247,54 @@ class StationsPanel extends HTMLElement {
     }
   }
 
+  /* -------------------------------------------------------- image retries */
+  /**
+   * A photo failed to load (slow tunnel, dropped connection, expired link).
+   * Try again after 1, 3 and 8 seconds. Then fetch fresh links once (they
+   * expire after 24 hours) and, if it still fails, show a tap-to-retry tile
+   * instead of the browser's broken-image icon.
+   */
+  _imageFailed(img) {
+    if (!(img instanceof HTMLImageElement) || !img.isConnected) return;
+    const src = img.getAttribute("src");
+    if (!src) return;
+    const tries = Number(img.dataset.tries || 0);
+    const delays = [1000, 3000, 8000];
+    if (tries < delays.length) {
+      img.dataset.tries = String(tries + 1);
+      setTimeout(() => {
+        if (!img.isConnected) return;
+        img.removeAttribute("src");
+        img.setAttribute("src", src);
+      }, delays[tries]);
+      return;
+    }
+    const now = Date.now();
+    if (!this._linksRefreshedAt || now - this._linksRefreshedAt > 60000) {
+      // New links re-render the images, which starts their retries afresh.
+      this._linksRefreshedAt = now;
+      this._load();
+      return;
+    }
+    if (img.nextElementSibling?.classList.contains("img-failed")) return;
+    img.hidden = true;
+    img.insertAdjacentHTML(
+      "afterend",
+      `<span class="img-failed" data-action="img-retry"><ha-icon icon="mdi:image-off-outline"></ha-icon>${esc(this.t("image_failed"))}</span>`
+    );
+  }
+
+  _retryImage(placeholder) {
+    const img = placeholder.previousElementSibling;
+    placeholder.remove();
+    if (!(img instanceof HTMLImageElement)) return;
+    const src = img.getAttribute("src");
+    img.hidden = false;
+    img.dataset.tries = "0";
+    img.removeAttribute("src");
+    img.setAttribute("src", src);
+  }
+
   _defaultPowerLabel(which) {
     // Pre-select an existing "power on" / "power off" style label.
     const labels = this._powerEdit?.labels || [];
@@ -2334,32 +2414,108 @@ class StationsPanel extends HTMLElement {
     }
   }
 
+  _uploadText(u) {
+    return u.pct > 0 ? this.t("uploading_pct", u.name, u.pct) : this.t("uploading", u.name);
+  }
+
+  _setUploadProgress(u, pct) {
+    u.pct = pct;
+    const el = this.shadowRoot.getElementById(`up-${u.id}`);
+    if (el) el.textContent = this._uploadText(u);
+  }
+
+  /** Turn a failed response into a message a person can act on. */
+  async _uploadError(resp, name) {
+    if (resp.status === 401 || resp.status === 403) return this.t("err_signed_out");
+    if (resp.status === 413) return this.t("err_too_large", name, MAX_UPLOAD_MB);
+    if (resp.status === 415) return this.t("err_wrong_type", name);
+    try {
+      const msg = (await resp.json()).message;
+      if (msg) return msg;
+    } catch (e) {
+      /* no JSON body */
+    }
+    return resp.status >= 500 || resp.status === 0 ? this.t("err_connection", name) : `${this.t("upload_failed", name, resp.status)}`;
+  }
+
+  /**
+   * fetch with retries for a dropped connection or a proxy hiccup (502-504).
+   * Returns the response, or throws UploadError with a readable message.
+   */
+  async _uploadFetch(url, init, name) {
+    const delays = [1000, 3000, 8000];
+    for (let attempt = 0; ; attempt++) {
+      let resp;
+      try {
+        resp = await this._hass.fetchWithAuth(url, init);
+      } catch (err) {
+        resp = null;
+      }
+      if (resp && ![502, 503, 504].includes(resp.status)) return resp;
+      if (attempt >= delays.length) {
+        throw new UploadError(this.t("err_connection", name));
+      }
+      await new Promise((r) => setTimeout(r, delays[attempt]));
+    }
+  }
+
+  /** Send one file in pieces: start, pieces in order, finish. */
+  async _uploadOne(entryId, file, u) {
+    const name = file.name;
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new UploadError(this.t("err_too_large", name, MAX_UPLOAD_MB));
+    if (!UPLOAD_TYPES.includes(file.type) && !/\.(txt|jpe?g|png|gif|webp|pdf)$/i.test(name)) {
+      throw new UploadError(this.t("err_wrong_type", name));
+    }
+    const base = `/api/stations/${entryId}/uploads`;
+    let resp = await this._uploadFetch(
+      base,
+      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: name, size: file.size }) },
+      name
+    );
+    if (!resp.ok) throw new UploadError(await this._uploadError(resp, name));
+    const { upload_id: id, chunk_size: chunk } = await resp.json();
+    const url = `${base}/${id}`;
+    try {
+      let offset = 0;
+      while (offset < file.size) {
+        resp = await this._uploadFetch(`${url}?offset=${offset}`, { method: "PUT", body: file.slice(offset, offset + chunk) }, name);
+        if (resp.status === 409) {
+          // A piece landed but its answer got lost: continue where the server is.
+          offset = (await resp.json()).received;
+        } else if (!resp.ok) {
+          throw new UploadError(await this._uploadError(resp, name));
+        } else {
+          offset = (await resp.json()).received;
+        }
+        this._setUploadProgress(u, Math.min(99, Math.round((offset / file.size) * 100)));
+      }
+      resp = await this._uploadFetch(url, { method: "POST" }, name);
+      if (!resp.ok) throw new UploadError(await this._uploadError(resp, name));
+    } catch (err) {
+      this._hass.fetchWithAuth(url, { method: "DELETE" }).catch(() => {});
+      throw err;
+    }
+  }
+
   async _uploadFiles(files) {
     const d = this._detail;
     if (!d || !files.length) return;
-    for (const original of files) {
-      this._uploads.push(original.name);
-      this._renderFiles();
+    const queued = files.map((original) => ({ original, u: { id: ++this._uploadSeq, name: original.name, pct: 0 } }));
+    this._uploads.push(...queued.map((q) => q.u));
+    this._renderFiles();
+    const failed = [];
+    for (const { original, u } of queued) {
       try {
         const file = await this._prepareImage(original);
-        const form = new FormData();
-        form.append("file", file, file.name);
-        const resp = await this._hass.fetchWithAuth(`/api/stations/${d.entry_id}/files`, { method: "POST", body: form });
-        if (!resp.ok) {
-          let why = `${resp.status}`;
-          try {
-            why = (await resp.json()).message || why;
-          } catch (e) {
-            /* keep status */
-          }
-          this._toast(this.t("upload_failed", original.name, why));
-        }
+        await this._uploadOne(d.entry_id, file, u);
       } catch (err) {
-        this._toast(this.t("upload_failed", original.name, err?.message || String(err)));
+        failed.push(err instanceof UploadError ? err.message : this.t("upload_failed", original.name, err?.message || String(err)));
       } finally {
-        this._uploads.splice(this._uploads.indexOf(original.name), 1);
+        this._uploads.splice(this._uploads.indexOf(u), 1);
       }
     }
+    if (failed.length === 1 && files.length === 1) this._toast(failed[0]);
+    else if (failed.length) this._toast(this.t("upload_summary", files.length - failed.length, files.length, failed.join(" · ")));
     await this._load();
   }
 }

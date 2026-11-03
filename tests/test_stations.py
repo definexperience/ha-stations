@@ -506,6 +506,150 @@ async def test_upload_serve_delete(
     assert hass.data[DOMAIN].store.get(entry.entry_id)["cover"] is None
 
 
+def _jpeg(width: int, height: int) -> bytes:
+    from PIL import Image
+
+    buf = io.BytesIO()
+    Image.new("RGB", (width, height), (200, 30, 30)).save(buf, "JPEG", quality=95)
+    return buf.getvalue()
+
+
+async def test_small_photo_copy(
+    hass: HomeAssistant, setup_http, hass_client, hass_ws_client, hass_client_no_auth
+) -> None:
+    """Photos get a small copy for lists and galleries, made on upload or on demand."""
+    from PIL import Image
+
+    entry = await _create_station(hass, "Desk A")
+    client = await hass_client()
+    form = aiohttp.FormData()
+    form.add_field("file", io.BytesIO(_jpeg(2000, 1000)), filename="wide.jpg")
+    resp = await client.post(f"/api/stations/{entry.entry_id}/files", data=form)
+    assert resp.status == HTTPStatus.CREATED
+    file_id = (await resp.json())["id"]
+    store = hass.data[DOMAIN].store
+    record = store.get_file(entry.entry_id, file_id)
+    small = store.small_path(entry.entry_id, record)
+    assert small.is_file()  # made on upload
+
+    ws = await hass_ws_client(hass)
+    await ws.send_json_auto_id({"type": "stations/get", "entry_id": entry.entry_id})
+    result = (await ws.receive_json())["result"]
+    small_url = result["files"][0]["small_url"]
+    assert "size=small" in small_url and "authSig=" in small_url
+
+    anon = await hass_client_no_auth()
+    resp = await anon.get(small_url)
+    assert resp.status == HTTPStatus.OK
+    assert resp.headers["Content-Type"] == "image/jpeg"
+    with Image.open(io.BytesIO(await resp.read())) as img:
+        assert img.size == (640, 320)
+
+    # An old photo without a small copy gets one on first request.
+    small.unlink()
+    resp = await anon.get(small_url)
+    assert resp.status == HTTPStatus.OK
+    assert small.is_file()
+
+    await ws.send_json_auto_id({"type": "stations/list"})
+    st = (await ws.receive_json())["result"]["stations"][0]
+    assert "size=small" in st["cover_small_url"]
+
+    # Text files have no small copy.
+    form = aiohttp.FormData()
+    form.add_field("file", io.BytesIO(b"hello"), filename="notes.txt")
+    resp = await client.post(f"/api/stations/{entry.entry_id}/files", data=form)
+    assert resp.status == HTTPStatus.CREATED
+    await ws.send_json_auto_id({"type": "stations/get", "entry_id": entry.entry_id})
+    files = (await ws.receive_json())["result"]["files"]
+    assert files[1]["small_url"] is None
+
+    # Deleting the photo also deletes its small copy.
+    await ws.send_json_auto_id(
+        {"type": "stations/delete_file", "entry_id": entry.entry_id, "file_id": file_id}
+    )
+    assert (await ws.receive_json())["success"]
+    assert not small.exists()
+
+
+async def test_chunked_upload(hass: HomeAssistant, setup_http, hass_client) -> None:
+    """A file sent in pieces arrives whole; bad pieces and sizes are refused."""
+    from custom_components.stations import api
+
+    entry = await _create_station(hass, "Desk A")
+    client = await hass_client()
+    base = f"/api/stations/{entry.entry_id}/uploads"
+    data = _jpeg(1600, 1200) + b"\0" * (1300 * 1024)  # > 2 pieces
+    resp = await client.post(base, json={"filename": "big.jpg", "size": len(data), "caption": "Big"})
+    assert resp.status == HTTPStatus.CREATED, await resp.text()
+    body = await resp.json()
+    upload_id, chunk = body["upload_id"], body["chunk_size"]
+    assert chunk == 512 * 1024
+
+    # Out of order is refused and says where to continue.
+    resp = await client.put(f"{base}/{upload_id}?offset={chunk}", data=data[chunk : 2 * chunk])
+    assert resp.status == HTTPStatus.CONFLICT
+    assert (await resp.json())["received"] == 0
+
+    # Finishing early is refused.
+    resp = await client.post(f"{base}/{upload_id}")
+    assert resp.status == HTTPStatus.CONFLICT
+
+    offset = 0
+    while offset < len(data):
+        resp = await client.put(f"{base}/{upload_id}?offset={offset}", data=data[offset : offset + chunk])
+        assert resp.status == HTTPStatus.OK, await resp.text()
+        offset = (await resp.json())["received"]
+    # Sending the last piece again is refused without harm.
+    resp = await client.put(f"{base}/{upload_id}?offset={offset - 10}", data=data[-10:])
+    assert resp.status == HTTPStatus.CONFLICT
+
+    resp = await client.post(f"{base}/{upload_id}")
+    assert resp.status == HTTPStatus.CREATED, await resp.text()
+    file_id = (await resp.json())["id"]
+    store = hass.data[DOMAIN].store
+    record = store.get_file(entry.entry_id, file_id)
+    assert record["caption"] == "Big"
+    assert record["content_type"] == "image/jpeg"
+    assert store.file_path(entry.entry_id, record).read_bytes() == data
+    assert not list(api.uploads_dir(hass).iterdir())  # temporary file gone
+
+    # The upload is finished: further pieces are refused.
+    resp = await client.put(f"{base}/{upload_id}?offset=0", data=b"x")
+    assert resp.status == HTTPStatus.NOT_FOUND
+
+    # Too large, and the wrong file type, are refused with a clear message.
+    resp = await client.post(base, json={"filename": "huge.jpg", "size": 16 * 1024 * 1024})
+    assert resp.status == HTTPStatus.REQUEST_ENTITY_TOO_LARGE
+    assert (await resp.json())["message"] == "huge.jpg is larger than 15 MB"
+
+    heic = b"\x00\x00\x00\x18ftypheic"
+    resp = await client.post(base, json={"filename": "photo.heic", "size": len(heic)})
+    upload_id = (await resp.json())["upload_id"]
+    await client.put(f"{base}/{upload_id}?offset=0", data=heic)
+    resp = await client.post(f"{base}/{upload_id}")
+    assert resp.status == HTTPStatus.UNSUPPORTED_MEDIA_TYPE
+    assert (await resp.json())["message"].startswith("photo.heic can't be added")
+
+    # A cancelled upload is removed.
+    resp = await client.post(base, json={"filename": "a.png", "size": len(PNG)})
+    upload_id = (await resp.json())["upload_id"]
+    resp = await client.delete(f"{base}/{upload_id}")
+    assert resp.status == HTTPStatus.OK
+    assert not list(api.uploads_dir(hass).iterdir())
+
+    # An abandoned upload expires.
+    resp = await client.post(base, json={"filename": "a.png", "size": len(PNG)})
+    upload_id = (await resp.json())["upload_id"]
+    hass.data[f"{DOMAIN}_uploads"][upload_id].touched -= api.UPLOAD_EXPIRY_SECONDS + 1
+    resp = await client.post(base, json={"filename": "b.png", "size": len(PNG)})
+    assert upload_id not in hass.data[f"{DOMAIN}_uploads"]
+    assert len(list(api.uploads_dir(hass).iterdir())) == 1
+
+    resp = await client.post("/api/stations/nope/uploads", json={"filename": "a.png", "size": 1})
+    assert resp.status == HTTPStatus.NOT_FOUND
+
+
 async def test_remove_entry_cleans_up(hass: HomeAssistant, setup_http, hass_client) -> None:
     """Removing a station deletes its docs and files, but keeps the label."""
     entry = await _create_station(hass, "Desk A")
