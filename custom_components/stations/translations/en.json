@@ -8,23 +8,42 @@
           "name": "Name",
           "label_id": "Label",
           "area_id": "Area",
-          "use_power_labels": "Power on/off by label",
-          "power_on_label": "Power on label",
-          "power_off_label": "Power off label"
+          "use_power_labels": "Use power labels"
         },
         "data_description": {
           "label_id": "Use an existing label, or leave empty to create one.",
           "area_id": "Where the station stands.",
-          "power_on_label": "Leave empty to use the label \"Power on\" (created when missing). Power on switches on everything in the station with this label, presses labelled buttons and runs labelled scripts and scenes.",
-          "power_off_label": "Leave empty to use the label \"Power off\" (created when missing). When nothing in the station has this label, Power off switches off what Power on switched on.",
-          "use_power_labels": "Power on and Power off act on everything in the station with the labels below."
+          "use_power_labels": "Use labels to mark what in this station is switched on and off by the station's Power on and Power off."
+        }
+      },
+      "power_labels": {
+        "title": "Power labels",
+        "description": "Power on and Power off act on everything in {station} that carries the power labels.",
+        "data": {
+          "use_default_power_labels": "Use the default labels"
+        },
+        "data_description": {
+          "use_default_power_labels": "Mark what to switch with the labels \"Power on\" and \"Power off\". They are created if they don't exist yet. Switch off to choose your own labels."
+        }
+      },
+      "choose_power_labels": {
+        "title": "Choose power labels",
+        "description": "Power on switches on everything in {station} with the first label, presses labelled buttons and runs labelled scripts and scenes. Power off does the same with the second label. When the second label is empty or nothing has it, Power off switches off what Power on switched on.",
+        "data": {
+          "power_on_label": "Power on label",
+          "power_off_label": "Power off label"
+        },
+        "data_description": {
+          "power_on_label": "Power on: everything in the station with this label is switched on.",
+          "power_off_label": "Power off: everything in the station with this label is switched off. Can be left empty."
         }
       }
     },
     "error": {
       "name_required": "Enter a name.",
       "label_in_use": "This label is already used by station {station}. Choose another label.",
-      "name_label_in_use": "A label with this name is already used by station {station}. Choose a label, or use another name."
+      "name_label_in_use": "A label with this name is already used by station {station}. Choose a label, or use another name.",
+      "power_label_required": "Choose at least one label."
     },
     "abort": {
       "already_configured": "This label already belongs to another station."

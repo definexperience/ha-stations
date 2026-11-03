@@ -8,23 +8,42 @@
           "name": "Naam",
           "label_id": "Label",
           "area_id": "Ruimte",
-          "use_power_labels": "Aan/uit via label",
-          "power_on_label": "Label voor aanzetten",
-          "power_off_label": "Label voor uitzetten"
+          "use_power_labels": "Labels voor aan/uit gebruiken"
         },
         "data_description": {
           "label_id": "Kies een bestaand label, of laat leeg om er een aan te maken.",
           "area_id": "Waar het station staat.",
-          "power_on_label": "Laat leeg voor het label \"Power on\" (wordt aangemaakt als het ontbreekt). Aanzetten zet alles in het station met dit label aan, drukt gelabelde knoppen in en start gelabelde scripts en scènes.",
-          "power_off_label": "Laat leeg voor het label \"Power off\" (wordt aangemaakt als het ontbreekt). Heeft niets in het station dit label, dan zet Uitzetten uit wat Aanzetten aanzette.",
-          "use_power_labels": "Aanzetten en Uitzetten werken op alles in het station met de labels hieronder."
+          "use_power_labels": "Gebruik labels om aan te geven wat Aanzetten en Uitzetten van dit station schakelen."
+        }
+      },
+      "power_labels": {
+        "title": "Labels voor aan/uit",
+        "description": "Aanzetten en Uitzetten werken op alles in {station} met de labels voor aan/uit.",
+        "data": {
+          "use_default_power_labels": "Standaardlabels gebruiken"
+        },
+        "data_description": {
+          "use_default_power_labels": "Geef met de labels \"Power on\" en \"Power off\" aan wat geschakeld wordt. Ze worden aangemaakt als ze nog niet bestaan. Zet uit om zelf labels te kiezen."
+        }
+      },
+      "choose_power_labels": {
+        "title": "Labels voor aan/uit kiezen",
+        "description": "Aanzetten zet alles in {station} met het eerste label aan, drukt gelabelde knoppen in en start gelabelde scripts en scènes. Uitzetten doet hetzelfde met het tweede label. Is het tweede label leeg of heeft niets het, dan zet Uitzetten uit wat Aanzetten aanzette.",
+        "data": {
+          "power_on_label": "Label voor aanzetten",
+          "power_off_label": "Label voor uitzetten"
+        },
+        "data_description": {
+          "power_on_label": "Aanzetten: alles in het station met dit label wordt aangezet.",
+          "power_off_label": "Uitzetten: alles in het station met dit label wordt uitgezet. Mag leeg blijven."
         }
       }
     },
     "error": {
       "name_required": "Vul een naam in.",
       "label_in_use": "Dit label wordt al gebruikt door station {station}. Kies een ander label.",
-      "name_label_in_use": "Een label met deze naam wordt al gebruikt door station {station}. Kies een label, of gebruik een andere naam."
+      "name_label_in_use": "Een label met deze naam wordt al gebruikt door station {station}. Kies een label, of gebruik een andere naam.",
+      "power_label_required": "Kies minstens één label."
     },
     "abort": {
       "already_configured": "Dit label hoort al bij een ander station."

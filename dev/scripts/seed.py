@@ -53,9 +53,9 @@ async def main():
         async def station(name, area):
             r = await s.post(B+"/api/config/config_entries/flow", json={"handler":"stations"}, headers=H)
             fid = (await r.json())["flow_id"]
-            labels = {l["name"]: l["label_id"] for l in await call(type="config/label_registry/list")}
-            body = {"name": name, "area_id": areas[area], "power_on_label": labels["Power on"], "power_off_label": labels["Power off"]}
-            r = await s.post(f"{B}/api/config/config_entries/flow/{fid}", json=body, headers=H)
+            r = await s.post(f"{B}/api/config/config_entries/flow/{fid}", json={"name": name, "area_id": areas[area]}, headers=H)
+            # Next step: "Use the default labels" (Power on / Power off)
+            r = await s.post(f"{B}/api/config/config_entries/flow/{fid}", json={"use_default_power_labels": True}, headers=H)
             return (await r.json())["result"]["entry_id"]
         a = await station("Pump station A", "Basement")
         b = await station("Network cabinet", "Server room")

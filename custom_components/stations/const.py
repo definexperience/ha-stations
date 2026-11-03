@@ -9,6 +9,7 @@ CONF_AREA_ID = "area_id"
 CONF_POWER_ON_LABEL = "power_on_label"
 CONF_POWER_OFF_LABEL = "power_off_label"
 CONF_USE_POWER_LABELS = "use_power_labels"
+CONF_USE_DEFAULT_POWER_LABELS = "use_default_power_labels"
 
 # Labels suggested for power on / power off in the config flow
 DEFAULT_POWER_ON_LABEL = "Power on"
