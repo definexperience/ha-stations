@@ -8,14 +8,16 @@
           "name": "Name",
           "label_id": "Label",
           "area_id": "Area",
+          "use_power_labels": "Power on/off by label",
           "power_on_label": "Power on label",
           "power_off_label": "Power off label"
         },
         "data_description": {
           "label_id": "Use an existing label, or leave empty to create one.",
           "area_id": "Where the station stands.",
-          "power_on_label": "Power on switches on everything in the station with this label, and presses labelled buttons and runs labelled scripts and scenes. Leave empty for no power control.",
-          "power_off_label": "Power off switches off and presses everything in the station with this label. When nothing has this label, Power off switches off what Power on switched on."
+          "power_on_label": "Leave empty to use the label \"Power on\" (created when missing). Power on switches on everything in the station with this label, presses labelled buttons and runs labelled scripts and scenes.",
+          "power_off_label": "Leave empty to use the label \"Power off\" (created when missing). When nothing in the station has this label, Power off switches off what Power on switched on.",
+          "use_power_labels": "Power on and Power off act on everything in the station with the labels below."
         }
       }
     },

@@ -21,12 +21,15 @@ from .const import (
     CONF_LABEL_ID,
     CONF_POWER_OFF_LABEL,
     CONF_POWER_ON_LABEL,
+    CONF_USE_POWER_LABELS,
     DEFAULT_LABEL_COLOR,
     DEFAULT_LABEL_ICON,
     DEFAULT_POWER_OFF_LABEL,
     DEFAULT_POWER_ON_LABEL,
     DOMAIN,
+    POWER_OFF_LABEL_COLOR,
     POWER_OFF_LABEL_ICON,
+    POWER_ON_LABEL_COLOR,
     POWER_ON_LABEL_ICON,
 )
 
@@ -104,9 +107,26 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
                 data: dict[str, Any] = {CONF_LABEL_ID: label_id}
                 if area_id := user_input.get(CONF_AREA_ID):
                     data[CONF_AREA_ID] = area_id
-                for key in (CONF_POWER_ON_LABEL, CONF_POWER_OFF_LABEL):
-                    if power_label := user_input.get(key):
-                        data[key] = power_label
+                if user_input.get(CONF_USE_POWER_LABELS, True):
+                    # An empty field means the shared default label, which is
+                    # created only now, when the station is actually made.
+                    for key, default, icon, color in (
+                        (
+                            CONF_POWER_ON_LABEL,
+                            DEFAULT_POWER_ON_LABEL,
+                            POWER_ON_LABEL_ICON,
+                            POWER_ON_LABEL_COLOR,
+                        ),
+                        (
+                            CONF_POWER_OFF_LABEL,
+                            DEFAULT_POWER_OFF_LABEL,
+                            POWER_OFF_LABEL_ICON,
+                            POWER_OFF_LABEL_COLOR,
+                        ),
+                    ):
+                        data[key] = user_input.get(key) or _label_for_name(
+                            self.hass, default, icon, color
+                        )
                 return self.async_create_entry(title=name, data=data)
 
         schema = vol.Schema(
@@ -114,26 +134,16 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
                 vol.Required(CONF_NAME): selector.TextSelector(),
                 vol.Optional(CONF_LABEL_ID): selector.LabelSelector(),
                 vol.Optional(CONF_AREA_ID): selector.AreaSelector(),
+                # The label pickers are left empty on purpose: Home Assistant's
+                # label picker shows a pre-filled label as "Unknown item".
+                vol.Optional(CONF_USE_POWER_LABELS, default=True): selector.BooleanSelector(),
                 vol.Optional(CONF_POWER_ON_LABEL): selector.LabelSelector(),
                 vol.Optional(CONF_POWER_OFF_LABEL): selector.LabelSelector(),
             }
         )
-        if user_input is None:
-            # Suggest the shared "Power on" / "Power off" labels. They are
-            # created here when missing, so the label picker can show them.
-            suggested: dict[str, Any] = {
-                CONF_POWER_ON_LABEL: _label_for_name(
-                    self.hass, DEFAULT_POWER_ON_LABEL, POWER_ON_LABEL_ICON, None
-                ),
-                CONF_POWER_OFF_LABEL: _label_for_name(
-                    self.hass, DEFAULT_POWER_OFF_LABEL, POWER_OFF_LABEL_ICON, None
-                ),
-            }
-        else:
-            suggested = user_input
         return self.async_show_form(
             step_id="user",
-            data_schema=self.add_suggested_values_to_schema(schema, suggested),
+            data_schema=self.add_suggested_values_to_schema(schema, user_input or {}),
             errors=errors,
             description_placeholders=placeholders,
         )

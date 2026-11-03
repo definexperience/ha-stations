@@ -8,12 +8,15 @@ CONF_LABEL_ID = "label_id"
 CONF_AREA_ID = "area_id"
 CONF_POWER_ON_LABEL = "power_on_label"
 CONF_POWER_OFF_LABEL = "power_off_label"
+CONF_USE_POWER_LABELS = "use_power_labels"
 
 # Labels suggested for power on / power off in the config flow
 DEFAULT_POWER_ON_LABEL = "Power on"
 DEFAULT_POWER_OFF_LABEL = "Power off"
 POWER_ON_LABEL_ICON = "mdi:power"
-POWER_OFF_LABEL_ICON = "mdi:power-off"
+POWER_OFF_LABEL_ICON = "mdi:power"
+POWER_ON_LABEL_COLOR = "green"
+POWER_OFF_LABEL_COLOR = "red"
 
 # Panel
 PANEL_URL_PATH = "stations"

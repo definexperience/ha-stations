@@ -8,14 +8,16 @@
           "name": "Naam",
           "label_id": "Label",
           "area_id": "Ruimte",
+          "use_power_labels": "Aan/uit via label",
           "power_on_label": "Label voor aanzetten",
           "power_off_label": "Label voor uitzetten"
         },
         "data_description": {
           "label_id": "Kies een bestaand label, of laat leeg om er een aan te maken.",
           "area_id": "Waar het station staat.",
-          "power_on_label": "Aanzetten zet alles in het station met dit label aan, drukt gelabelde knoppen in en start gelabelde scripts en scènes. Laat leeg voor geen aan/uit-bediening.",
-          "power_off_label": "Uitzetten zet alles in het station met dit label uit en drukt gelabelde knoppen in. Heeft niets dit label, dan zet Uitzetten uit wat Aanzetten aanzette."
+          "power_on_label": "Laat leeg voor het label \"Power on\" (wordt aangemaakt als het ontbreekt). Aanzetten zet alles in het station met dit label aan, drukt gelabelde knoppen in en start gelabelde scripts en scènes.",
+          "power_off_label": "Laat leeg voor het label \"Power off\" (wordt aangemaakt als het ontbreekt). Heeft niets in het station dit label, dan zet Uitzetten uit wat Aanzetten aanzette.",
+          "use_power_labels": "Aanzetten en Uitzetten werken op alles in het station met de labels hieronder."
         }
       }
     },

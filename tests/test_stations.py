@@ -125,43 +125,30 @@ async def test_flow_creates_label_device_and_entities(hass: HomeAssistant, setup
 
 
 async def test_flow_power_labels(hass: HomeAssistant, setup_http, hass_ws_client) -> None:
-    """The form suggests "Power on" / "Power off", creating them when missing."""
+    """Empty power fields use "Power on" / "Power off", created only on submit."""
     lab_reg = lr.async_get(hass)
-    assert lab_reg.async_get_label_by_name("Power on") is None
-
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
-    power_on = lab_reg.async_get_label_by_name("Power on")
-    power_off = lab_reg.async_get_label_by_name("Power off")
-    assert power_on is not None and power_off is not None
-    assert power_on.icon == "mdi:power"
+    # Opening the form creates nothing, and pre-fills no label (Home
+    # Assistant's label picker would show it as "Unknown item").
+    assert lab_reg.async_get_label_by_name("Power on") is None
     suggested = {
         str(key): key.description["suggested_value"]
         for key in result["data_schema"].schema
-        if key.description
+        if key.description and "suggested_value" in key.description
     }
-    assert suggested == {
-        "power_on_label": power_on.label_id,
-        "power_off_label": power_off.label_id,
-    }
-
-    # Opening the form again does not create duplicates.
-    await hass.config_entries.flow.async_init(
-        DOMAIN, context={"source": config_entries.SOURCE_USER}
-    )
-    assert len(lab_reg.async_list_labels()) == 2
+    assert suggested == {}
 
     result = await hass.config_entries.flow.async_configure(
-        result["flow_id"],
-        {
-            "name": "Desk A",
-            "power_on_label": power_on.label_id,
-            "power_off_label": power_off.label_id,
-        },
+        result["flow_id"], {"name": "Desk A", "use_power_labels": True}
     )
     assert result["type"] is FlowResultType.CREATE_ENTRY
     await hass.async_block_till_done()
+    power_on = lab_reg.async_get_label_by_name("Power on")
+    power_off = lab_reg.async_get_label_by_name("Power off")
+    assert (power_on.icon, power_on.color) == ("mdi:power", "green")
+    assert (power_off.icon, power_off.color) == ("mdi:power", "red")
     entry = hass.config_entries.async_get_entry(result["result"].entry_id)
     assert "power_on_label" not in entry.data  # moved into the power settings
     assert hass.data[DOMAIN].store.get(entry.entry_id)["power"] == {
@@ -169,15 +156,39 @@ async def test_flow_power_labels(hass: HomeAssistant, setup_http, hass_ws_client
         "off": {"mode": "label", "label_id": power_off.label_id},
     }
 
-    # Without a power off label, nothing configured for off.
-    entry_b = await _create_station(hass, "Desk B", power_on_label=power_on.label_id)
-    assert hass.data[DOMAIN].store.get(entry_b.entry_id)["power"] == {
-        "on": {"mode": "label", "label_id": power_on.label_id},
-        "off": {"mode": None},
+    # Existing labels are reused, whatever their capitals: no copies.
+    entry_b = await _create_station(hass, "Desk B")
+    assert len(lab_reg.async_list_labels()) == 4  # Desk A, Desk B, Power on/off
+    assert hass.data[DOMAIN].store.get(entry_b.entry_id)["power"]["on"] == {
+        "mode": "label",
+        "label_id": power_on.label_id,
     }
-    # Without power labels, no power settings at all.
-    entry_c = await _create_station(hass, "Desk C")
-    assert "power" not in hass.data[DOMAIN].store.get(entry_c.entry_id)
+
+    # A label of your own is used instead of the default.
+    mine = lab_reg.async_create("Aan")
+    entry_c = await _create_station(hass, "Desk C", power_on_label=mine.label_id)
+    assert hass.data[DOMAIN].store.get(entry_c.entry_id)["power"] == {
+        "on": {"mode": "label", "label_id": mine.label_id},
+        "off": {"mode": "label", "label_id": power_off.label_id},
+    }
+
+    # Switched off: no power settings at all.
+    entry_d = await _create_station(hass, "Desk D", use_power_labels=False)
+    assert "power" not in hass.data[DOMAIN].store.get(entry_d.entry_id)
+
+
+async def test_flow_reuses_lowercase_power_labels(hass: HomeAssistant, setup_http) -> None:
+    """Labels named "power on" / "power off" are found and reused."""
+    lab_reg = lr.async_get(hass)
+    on = lab_reg.async_create("power on")
+    off = lab_reg.async_create("power off")
+    entry = await _create_station(hass, "Desk A")
+    assert lab_reg.async_get_label_by_name("Power on").label_id == on.label_id
+    assert len(lab_reg.async_list_labels()) == 3
+    assert hass.data[DOMAIN].store.get(entry.entry_id)["power"] == {
+        "on": {"mode": "label", "label_id": on.label_id},
+        "off": {"mode": "label", "label_id": off.label_id},
+    }
 
 
 async def test_power_labels_press_buttons_and_off_fallback(

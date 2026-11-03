@@ -37,7 +37,7 @@ So "show only the IP address" is: tick IP / web address, untick all entities, sa
 
 ## Power on and power off
 
-A new station is set up for power straight away: the form to create a station has a **Power on label** and a **Power off label**, filled in with the labels `Power on` and `Power off`. They are created when they don't exist yet, and every station shares them. Clear a field for a station without power control.
+A new station is set up for power straight away: the form to create a station has a **Power on/off by label** switch (on by default) with a **Power on label** and a **Power off label**. Left empty, they use the labels `Power on` (green) and `Power off` (red), created when they don't exist yet and shared by every station. Switch it off for a station without power control.
 
 To change it later, click **Set up power** (or the cog) on a station page (admins) and choose, separately for power on and power off:
 
