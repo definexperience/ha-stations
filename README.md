@@ -9,11 +9,11 @@ Group the devices that are built into one piece of furniture into a **station**,
 
 ## What you get
 
-- **A "Stations" page in the sidebar.** It shows every station as a card with a cover photo, its area, how many devices it has, and a red badge when something in it is unavailable. The search box also finds stations by device name, so "where is the UPS?" is one search away.
+- **A "Stations" page in the sidebar.** It shows every station as a card with a cover photo, its area, how many devices it has, and a red badge when something in it is unavailable. The search box also finds stations by device name, so "where is the UPS?" is one search away. Sort the list by name, area or floor; sorted by area or floor, the stations are grouped under a heading per area or floor (floors in order of their level).
 - **A station page** with:
   - **Devices**: every member device with a live status dot (available / partly unavailable / unavailable). Its entities are collapsed under "n more" until you choose what to show for that device. Click an entity to open the normal Home Assistant more-info dialog, or a device name to open its device page. Devices that have a **Visit** link on their Home Assistant device page (usually their own web interface) get the same **Visit** link here.
   - **Documentation**: free text in Markdown (headings, tables, checklists, links, code), edited in the browser. There is a starter template with sections for purpose, location, power, network, maintenance, contacts and changelog. Photos you uploaded can be placed inline in the text.
-  - **Photos & files**: upload photos (JPEG, PNG, GIF, WebP), PDFs (datasheets, wiring diagrams) and text files. Drag and drop works, and on a phone the upload button can take a photo directly. Large photos are scaled down to 2560 px before upload. Every file can have a caption, the order can be changed, and one photo is the cover shown on the overview.
+  - **Photos & files**: upload photos (JPEG, PNG, GIF, WebP), PDFs (datasheets, wiring diagrams) and text files. Select or drag several files at once, and on a phone the upload button can take a photo directly. Large photos are scaled down to 2560 px before upload, and files are sent in pieces of 512 KB, so uploads also work through tunnels and proxies that limit the size of a request. The overview and the gallery load small copies of the photos; the full photo opens in the viewer. Every file can have a caption, the order can be changed, and one photo is the cover shown on the overview.
 - **A device per station** under Settings → Devices & services, with three entities:
   - `sensor.<station>_devices`: number of member devices. Its `entity_id` attribute lists every member entity, so `expand('sensor.<station>_devices')` works in templates like it would for a group.
   - `sensor.<station>_unavailable_devices`: number of member devices that are completely unavailable, with their names as an attribute.
@@ -37,11 +37,13 @@ So "show only the IP address" is: tick IP / web address, untick all entities, sa
 
 ## Power on and power off
 
-Click **Set up power** on a station page (admins) and choose, separately for power on and power off:
+A new station is set up for power straight away: the form to create a station has a **Power on label** and a **Power off label**, filled in with the labels `Power on` and `Power off`. They are created when they don't exist yet, and every station shares them. Clear a field for a station without power control.
+
+To change it later, click **Set up power** (or the cog) on a station page (admins) and choose, separately for power on and power off:
 
 - **Everything in this station with the label…**: for example your existing `power on` and `power off` labels. Only members of this station are affected, so the same two labels work for every station. A label on a single entity selects that entity; a label on a whole device selects its switches, lights and similar on/off entities.
 - **These entities and scripts…**: a fixed list, which may also contain things outside the station.
-- For power off you can also choose **Switch off what Power on switched on**.
+- For power off you can also choose **Switch off what Power on switched on**. This is also what happens when power off uses a label that nothing in the station carries.
 
 Scripts, scenes and buttons are run; switches, lights and the like are switched on or off. If the steps must happen in a fixed order (power supply first, then the controller), put them in a script and choose that script. The settings screen shows which entities the choice acts on right now.
 
@@ -79,7 +81,7 @@ HACS shows an update whenever a new release is published. HACS only works with p
 ### Create your first station
 
 1. Go to **Settings → Devices & services → Add integration** and search for **Stations**.
-2. Enter a name, optionally pick an existing label and the area where the station stands.
+2. Enter a name, optionally pick an existing label and the area where the station stands, and check the power on / power off labels. A label that another station already uses is refused with the name of that station.
 3. Repeat for every station. The **Stations** entry appears in the sidebar after the first one.
 
 You can also start a new station with the **+ Station** button at the top of the Stations page.
