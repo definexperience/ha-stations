@@ -6,6 +6,7 @@ Both are inside the config directory, so they are part of normal HA backups.
 
 from __future__ import annotations
 
+import logging
 import os
 from pathlib import Path
 import shutil
@@ -15,7 +16,38 @@ from homeassistant.core import HomeAssistant
 from homeassistant.helpers.storage import Store
 from homeassistant.util import dt as dt_util
 
-from .const import FILES_DIR, STORAGE_KEY, STORAGE_VERSION
+from .const import FILES_DIR, SMALL_IMAGE_EDGE, STORAGE_KEY, STORAGE_VERSION
+
+_LOGGER = logging.getLogger(__name__)
+
+# Photos that get a small copy for the list and the gallery.
+RESIZABLE_TYPES = {"image/jpeg", "image/png", "image/gif", "image/webp"}
+
+
+def make_small_image(source: Path, target: Path) -> bool:
+    """Write a small JPEG copy of a photo. Runs in the executor.
+
+    Returns False when the photo can't be read; the caller then serves the
+    original instead.
+    """
+    from PIL import Image, ImageOps  # noqa: PLC0415 - heavy, only needed here
+
+    try:
+        with Image.open(source) as img:
+            img = ImageOps.exif_transpose(img)
+            img.thumbnail((SMALL_IMAGE_EDGE, SMALL_IMAGE_EDGE))
+            if img.mode != "RGB":
+                # Flatten transparency onto white, JPEG has no alpha.
+                rgba = img.convert("RGBA")
+                img = Image.new("RGB", rgba.size, (255, 255, 255))
+                img.paste(rgba, mask=rgba.getchannel("A"))
+            tmp = target.with_suffix(target.suffix + ".part")
+            img.save(tmp, "JPEG", quality=80, optimize=True)
+        os.replace(tmp, target)
+    except (OSError, ValueError) as err:
+        _LOGGER.debug("Could not make a small copy of %s: %s", source, err)
+        return False
+    return True
 
 
 def _empty_doc() -> dict[str, Any]:
@@ -54,6 +86,26 @@ class DocsStore:
     def file_path(self, entry_id: str, file: dict[str, Any]) -> Path:
         """Location on disk of a stored file."""
         return self.station_dir(entry_id) / f"{file['id']}{file['ext']}"
+
+    def small_path(self, entry_id: str, file: dict[str, Any]) -> Path:
+        """Location on disk of the small copy of a photo."""
+        return self.station_dir(entry_id) / f"{file['id']}.small.jpg"
+
+    async def async_small_image(self, entry_id: str, file: dict[str, Any]) -> Path | None:
+        """Return the small copy of a photo, making it when it doesn't exist yet."""
+        if file["content_type"] not in RESIZABLE_TYPES:
+            return None
+        source = self.file_path(entry_id, file)
+        target = self.small_path(entry_id, file)
+
+        def _ensure() -> Path | None:
+            if target.is_file():
+                return target
+            if not source.is_file():
+                return None
+            return target if make_small_image(source, target) else None
+
+        return await self.hass.async_add_executor_job(_ensure)
 
     # ------------------------------------------------------------------- read
     def get(self, entry_id: str) -> dict[str, Any]:
@@ -130,6 +182,7 @@ class DocsStore:
             os.replace(tmp, path)
 
         await self.hass.async_add_executor_job(_write)
+        await self.async_small_image(entry_id, record)
         doc = self._doc(entry_id)
         doc["files"].append(record)
         if doc["cover"] is None and content_type.startswith("image/"):
@@ -163,7 +216,13 @@ class DocsStore:
         if (record := self.get_file(entry_id, file_id)) is None:
             return False
         path = self.file_path(entry_id, record)
-        await self.hass.async_add_executor_job(lambda: path.unlink(missing_ok=True))
+        small = self.small_path(entry_id, record)
+
+        def _unlink() -> None:
+            path.unlink(missing_ok=True)
+            small.unlink(missing_ok=True)
+
+        await self.hass.async_add_executor_job(_unlink)
         doc = self._doc(entry_id)
         doc["files"] = [f for f in doc["files"] if f["id"] != file_id]
         if doc["cover"] == file_id:

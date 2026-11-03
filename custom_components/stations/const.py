@@ -6,6 +6,14 @@ DOMAIN = "stations"
 
 CONF_LABEL_ID = "label_id"
 CONF_AREA_ID = "area_id"
+CONF_POWER_ON_LABEL = "power_on_label"
+CONF_POWER_OFF_LABEL = "power_off_label"
+
+# Labels suggested for power on / power off in the config flow
+DEFAULT_POWER_ON_LABEL = "Power on"
+DEFAULT_POWER_OFF_LABEL = "Power off"
+POWER_ON_LABEL_ICON = "mdi:power"
+POWER_OFF_LABEL_ICON = "mdi:power-off"
 
 # Panel
 PANEL_URL_PATH = "stations"
@@ -21,6 +29,8 @@ FILES_DIR = "stations"  # relative to the HA config directory
 
 # Uploads
 MAX_UPLOAD_BYTES = 15 * 1024 * 1024
+# Longest side, in pixels, of the small photo copies used in lists and galleries
+SMALL_IMAGE_EDGE = 640
 ALLOWED_CONTENT_TYPES: dict[str, str] = {
     "image/jpeg": ".jpg",
     "image/png": ".png",

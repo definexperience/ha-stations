@@ -294,11 +294,13 @@ class Station:
     def power_targets(self, which: str) -> list[str]:
         """Entities acted on for "on" or "off".
 
-        When nothing is configured for "off", power off switches off the
-        switchable targets of "on".
+        When nothing is configured for "off", or "off" uses a label that
+        nothing in the station carries, power off switches off the switchable
+        targets of "on".
         """
         targets = self._configured_targets(which)
-        if which == "off" and not targets and not (self.power_config().get("off") or {}).get("mode"):
+        off_mode = (self.power_config().get("off") or {}).get("mode")
+        if which == "off" and not targets and off_mode in (None, "label"):
             targets = [
                 eid
                 for eid in self._configured_targets("on")

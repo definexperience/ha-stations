@@ -7,16 +7,22 @@
         "data": {
           "name": "Naam",
           "label_id": "Label",
-          "area_id": "Ruimte"
+          "area_id": "Ruimte",
+          "power_on_label": "Label voor aanzetten",
+          "power_off_label": "Label voor uitzetten"
         },
         "data_description": {
           "label_id": "Kies een bestaand label, of laat leeg om er een aan te maken.",
-          "area_id": "Waar het station staat."
+          "area_id": "Waar het station staat.",
+          "power_on_label": "Aanzetten zet alles in het station met dit label aan, drukt gelabelde knoppen in en start gelabelde scripts en scènes. Laat leeg voor geen aan/uit-bediening.",
+          "power_off_label": "Uitzetten zet alles in het station met dit label uit en drukt gelabelde knoppen in. Heeft niets dit label, dan zet Uitzetten uit wat Aanzetten aanzette."
         }
       }
     },
     "error": {
-      "name_required": "Vul een naam in."
+      "name_required": "Vul een naam in.",
+      "label_in_use": "Dit label wordt al gebruikt door station {station}. Kies een ander label.",
+      "name_label_in_use": "Een label met deze naam wordt al gebruikt door station {station}. Kies een label, of gebruik een andere naam."
     },
     "abort": {
       "already_configured": "Dit label hoort al bij een ander station."
@@ -33,7 +39,7 @@
       }
     },
     "error": {
-      "label_in_use": "Dit label hoort al bij een ander station."
+      "label_in_use": "Dit label wordt al gebruikt door station {station}. Kies een ander label."
     }
   },
   "entity": {

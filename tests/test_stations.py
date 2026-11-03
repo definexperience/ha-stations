@@ -16,6 +16,7 @@ from homeassistant.helpers import (
     area_registry as ar,
     device_registry as dr,
     entity_registry as er,
+    floor_registry as fr,
     label_registry as lr,
 )
 from homeassistant.setup import async_setup_component
@@ -98,15 +99,168 @@ async def test_flow_creates_label_device_and_entities(hass: HomeAssistant, setup
     assert hass.states.get("sensor.desk_a_unavailable_devices").state == "0"
     assert hass.states.get("binary_sensor.desk_a_status").state == "off"
 
-    # Same label again is refused.
+    # Same label again is refused, with the form kept open.
     result = await hass.config_entries.flow.async_init(
         DOMAIN, context={"source": config_entries.SOURCE_USER}
     )
     result = await hass.config_entries.flow.async_configure(
         result["flow_id"], {"name": "Other", "label_id": label.label_id}
     )
-    assert result["type"] is FlowResultType.ABORT
-    assert result["reason"] == "already_configured"
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"label_id": "label_in_use"}
+    assert result["description_placeholders"]["station"] == "Desk A"
+
+    # Leaving the label empty with the name of a used label is refused too.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Desk A"}
+    )
+    assert result["type"] is FlowResultType.FORM
+    assert result["errors"] == {"name": "name_label_in_use"}
+
+    # A free label still works in the same flow.
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"], {"name": "Other"}
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+
+
+async def test_flow_power_labels(hass: HomeAssistant, setup_http, hass_ws_client) -> None:
+    """The form suggests "Power on" / "Power off", creating them when missing."""
+    lab_reg = lr.async_get(hass)
+    assert lab_reg.async_get_label_by_name("Power on") is None
+
+    result = await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    power_on = lab_reg.async_get_label_by_name("Power on")
+    power_off = lab_reg.async_get_label_by_name("Power off")
+    assert power_on is not None and power_off is not None
+    assert power_on.icon == "mdi:power"
+    suggested = {
+        str(key): key.description["suggested_value"]
+        for key in result["data_schema"].schema
+        if key.description
+    }
+    assert suggested == {
+        "power_on_label": power_on.label_id,
+        "power_off_label": power_off.label_id,
+    }
+
+    # Opening the form again does not create duplicates.
+    await hass.config_entries.flow.async_init(
+        DOMAIN, context={"source": config_entries.SOURCE_USER}
+    )
+    assert len(lab_reg.async_list_labels()) == 2
+
+    result = await hass.config_entries.flow.async_configure(
+        result["flow_id"],
+        {
+            "name": "Desk A",
+            "power_on_label": power_on.label_id,
+            "power_off_label": power_off.label_id,
+        },
+    )
+    assert result["type"] is FlowResultType.CREATE_ENTRY
+    await hass.async_block_till_done()
+    entry = hass.config_entries.async_get_entry(result["result"].entry_id)
+    assert "power_on_label" not in entry.data  # moved into the power settings
+    assert hass.data[DOMAIN].store.get(entry.entry_id)["power"] == {
+        "on": {"mode": "label", "label_id": power_on.label_id},
+        "off": {"mode": "label", "label_id": power_off.label_id},
+    }
+
+    # Without a power off label, nothing configured for off.
+    entry_b = await _create_station(hass, "Desk B", power_on_label=power_on.label_id)
+    assert hass.data[DOMAIN].store.get(entry_b.entry_id)["power"] == {
+        "on": {"mode": "label", "label_id": power_on.label_id},
+        "off": {"mode": None},
+    }
+    # Without power labels, no power settings at all.
+    entry_c = await _create_station(hass, "Desk C")
+    assert "power" not in hass.data[DOMAIN].store.get(entry_c.entry_id)
+
+
+async def test_power_labels_press_buttons_and_off_fallback(
+    hass: HomeAssistant, setup_http, hass_ws_client
+) -> None:
+    """Labelled buttons are pressed on and off; an unused off label reverses on."""
+    assert await async_setup_component(hass, "homeassistant", {})
+    assert await async_setup_component(
+        hass,
+        "input_boolean",
+        {"input_boolean": {"psu": {}}},
+    )
+    assert await async_setup_component(
+        hass, "input_button", {"input_button": {"reset": {}}}
+    )
+    lab_reg = lr.async_get(hass)
+    power_on = lab_reg.async_create("Power on")
+    power_off = lab_reg.async_create("Power off")
+    entry = await _create_station(
+        hass,
+        "Desk A",
+        power_on_label=power_on.label_id,
+        power_off_label=power_off.label_id,
+    )
+    label_id = entry.data["label_id"]
+    ent_reg = er.async_get(hass)
+    ent_reg.async_update_entity("input_boolean.psu", labels={label_id, power_on.label_id})
+    ent_reg.async_update_entity("input_button.reset", labels={label_id, power_on.label_id})
+    await hass.async_block_till_done()
+
+    ws = await hass_ws_client(hass)
+    await ws.send_json_auto_id({"type": "stations/power", "entry_id": entry.entry_id, "on": True})
+    assert (await ws.receive_json())["success"]
+    await hass.async_block_till_done()
+    assert hass.states.get("input_boolean.psu").state == "on"
+    pressed = hass.states.get("input_button.reset").state
+    assert pressed not in ("unknown", None)
+
+    # Nothing carries "Power off": power off switches off what power on switched on.
+    await ws.send_json_auto_id({"type": "stations/power", "entry_id": entry.entry_id, "on": False})
+    assert (await ws.receive_json())["success"]
+    await hass.async_block_till_done()
+    assert hass.states.get("input_boolean.psu").state == "off"
+
+    # Once something carries "Power off", only that is acted on, buttons included.
+    hass.states.async_set("input_button.reset", "2000-01-01T00:00:00+00:00")
+    ent_reg.async_update_entity(
+        "input_button.reset", labels={label_id, power_on.label_id, power_off.label_id}
+    )
+    await hass.async_block_till_done()
+    await ws.send_json_auto_id({"type": "stations/power", "entry_id": entry.entry_id, "on": True})
+    assert (await ws.receive_json())["success"]
+    await ws.send_json_auto_id({"type": "stations/power", "entry_id": entry.entry_id, "on": False})
+    assert (await ws.receive_json())["success"]
+    await hass.async_block_till_done()
+    assert hass.states.get("input_boolean.psu").state == "on"
+    assert hass.states.get("input_button.reset").state != "2000-01-01T00:00:00+00:00"
+
+
+async def test_list_has_floor(hass: HomeAssistant, setup_http, hass_ws_client) -> None:
+    """The station list carries the floor of the station's area."""
+    floor = fr.async_get(hass).async_create("First floor", level=1)
+    area = ar.async_get(hass).async_create("Lab", floor_id=floor.floor_id)
+    await _create_station(hass, "Desk A", area_id=area.id)
+    await _create_station(hass, "Desk B")
+
+    ws = await hass_ws_client(hass)
+    await ws.send_json_auto_id({"type": "stations/list"})
+    msg = await ws.receive_json()
+    assert msg["success"], msg
+    a, b = msg["result"]["stations"]
+    assert (a["area_name"], a["floor_id"], a["floor_name"], a["floor_level"]) == (
+        "Lab",
+        floor.floor_id,
+        "First floor",
+        1,
+    )
+    assert (b["area_id"], b["floor_id"], b["floor_name"], b["floor_level"]) == (
+        None,
+        None,
+        None,
+        None,
+    )
 
 
 async def test_membership_follows_labels(hass: HomeAssistant, setup_http) -> None:
@@ -476,8 +630,8 @@ async def test_power_label_mode(hass: HomeAssistant, setup_http, hass_ws_client)
     entry = await _create_station(hass, "Desk A")
     label_id = entry.data["label_id"]
     lab_reg = lr.async_get(hass)
-    power_on = lab_reg.async_create("power on")
-    power_off = lab_reg.async_create("power off")
+    power_on = lab_reg.async_create("Pump on")
+    power_off = lab_reg.async_create("Pump off")
     ent_reg = er.async_get(hass)
     ent_reg.async_update_entity("input_boolean.pump", labels={label_id, power_on.label_id, power_off.label_id})
     ent_reg.async_update_entity("input_boolean.lamp", labels={label_id, power_on.label_id})
@@ -516,7 +670,7 @@ async def test_power_label_mode(hass: HomeAssistant, setup_http, hass_ws_client)
     assert (await ws.receive_json())["success"]
     await hass.async_block_till_done()
     assert hass.states.get("input_boolean.pump").state == "off"
-    assert hass.states.get("input_boolean.lamp").state == "on"  # not labelled "power off"
+    assert hass.states.get("input_boolean.lamp").state == "on"  # not labelled "pump off"
 
     # A new member with the label is picked up without reconfiguring.
     hass.states.async_set("sensor.ignored", "1")

@@ -7,16 +7,22 @@
         "data": {
           "name": "Name",
           "label_id": "Label",
-          "area_id": "Area"
+          "area_id": "Area",
+          "power_on_label": "Power on label",
+          "power_off_label": "Power off label"
         },
         "data_description": {
           "label_id": "Use an existing label, or leave empty to create one.",
-          "area_id": "Where the station stands."
+          "area_id": "Where the station stands.",
+          "power_on_label": "Power on switches on everything in the station with this label, and presses labelled buttons and runs labelled scripts and scenes. Leave empty for no power control.",
+          "power_off_label": "Power off switches off and presses everything in the station with this label. When nothing has this label, Power off switches off what Power on switched on."
         }
       }
     },
     "error": {
-      "name_required": "Enter a name."
+      "name_required": "Enter a name.",
+      "label_in_use": "This label is already used by station {station}. Choose another label.",
+      "name_label_in_use": "A label with this name is already used by station {station}. Choose a label, or use another name."
     },
     "abort": {
       "already_configured": "This label already belongs to another station."
@@ -33,7 +39,7 @@
       }
     },
     "error": {
-      "label_in_use": "This label already belongs to another station."
+      "label_in_use": "This label is already used by station {station}. Choose another label."
     }
   },
   "entity": {

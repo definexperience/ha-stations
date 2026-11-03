@@ -20,6 +20,7 @@ from homeassistant.helpers import (
     area_registry as ar,
     device_registry as dr,
     entity_registry as er,
+    floor_registry as fr,
 )
 from homeassistant.helpers.dispatcher import (
     async_dispatcher_connect,
@@ -33,6 +34,7 @@ from .const import (
     SIGNAL_STATIONS_CHANGED,
 )
 from .station import device_display_name
+from .store import RESIZABLE_TYPES
 
 if TYPE_CHECKING:
     from . import StationsData
@@ -83,6 +85,11 @@ def _public_file(
         "uploaded_at": record["uploaded_at"],
         "uploaded_by": record["uploaded_by"],
         "url": _signed(hass, connection, _file_url(entry_id, record["id"])),
+        "small_url": _signed(
+            hass, connection, f"{_file_url(entry_id, record['id'])}?size=small"
+        )
+        if record["content_type"] in RESIZABLE_TYPES
+        else None,
     }
 
 
@@ -94,6 +101,11 @@ def _summary(
     doc = _data(hass).store.get(station.entry_id)
     label = station.label
     area = station.area
+    floor = (
+        fr.async_get(hass).async_get_floor(area.floor_id)
+        if area and area.floor_id
+        else None
+    )
     cover = doc["cover"]
     return {
         "entry_id": station.entry_id,
@@ -101,6 +113,9 @@ def _summary(
         "device_id": station.device_id,
         "area_id": area.id if area else None,
         "area_name": area.name if area else None,
+        "floor_id": floor.floor_id if floor else None,
+        "floor_name": floor.name if floor else None,
+        "floor_level": floor.level if floor else None,
         "label_id": station.label_id,
         "label_name": label.name if label else None,
         "label_color": label.color if label else None,
@@ -113,6 +128,11 @@ def _summary(
         "file_count": len(doc["files"]),
         "updated_at": doc["updated_at"],
         "cover_url": _signed(hass, connection, _file_url(station.entry_id, cover))
+        if cover
+        else None,
+        "cover_small_url": _signed(
+            hass, connection, f"{_file_url(station.entry_id, cover)}?size=small"
+        )
         if cover
         else None,
     }
@@ -710,6 +730,17 @@ class StationsFileView(HomeAssistantView):
         path = store.file_path(entry_id, record)
         if not await hass.async_add_executor_job(path.is_file):
             return self.json_message("File missing on disk", HTTPStatus.NOT_FOUND)
+        if request.query.get("size") == "small" and (
+            small := await store.async_small_image(entry_id, record)
+        ):
+            return web.FileResponse(
+                small,
+                headers={
+                    "Content-Type": "image/jpeg",
+                    "X-Content-Type-Options": "nosniff",
+                    "Cache-Control": "private, max-age=86400",
+                },
+            )
         headers = {
             "Content-Type": record["content_type"],
             "Content-Disposition": f"inline; filename*=UTF-8''{quote(record['filename'])}",

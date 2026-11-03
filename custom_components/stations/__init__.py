@@ -9,6 +9,7 @@ member devices together with documentation text, photos and files.
 from __future__ import annotations
 
 from dataclasses import dataclass, field
+from typing import Any
 
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.const import Platform
@@ -18,7 +19,14 @@ from homeassistant.helpers.dispatcher import async_dispatcher_send
 from homeassistant.helpers.typing import ConfigType
 
 from .api import async_register_api
-from .const import CONF_AREA_ID, DOMAIN, PANEL_URL_PATH, SIGNAL_STATIONS_CHANGED
+from .const import (
+    CONF_AREA_ID,
+    CONF_POWER_OFF_LABEL,
+    CONF_POWER_ON_LABEL,
+    DOMAIN,
+    PANEL_URL_PATH,
+    SIGNAL_STATIONS_CHANGED,
+)
 from .panel import async_register_panel
 from .station import Station
 from .store import DocsStore
@@ -65,6 +73,27 @@ async def async_setup_entry(hass: HomeAssistant, entry: StationConfigEntry) -> b
         device = dev_reg.async_update_device(device.id, area_id=area_id) or device
         hass.config_entries.async_update_entry(
             entry, data={k: v for k, v in entry.data.items() if k != CONF_AREA_ID}
+        )
+
+    # Likewise the power labels chosen in the config flow become the
+    # station's power settings once, unless power was already set up.
+    power_keys = (CONF_POWER_ON_LABEL, CONF_POWER_OFF_LABEL)
+    if any(key in entry.data for key in power_keys):
+        store = hass.data[DOMAIN].store
+        if not store.get(entry.entry_id).get("power"):
+
+            def _action(label_id: str | None) -> dict[str, Any]:
+                return {"mode": "label", "label_id": label_id} if label_id else {"mode": None}
+
+            await store.async_set_power(
+                entry.entry_id,
+                {
+                    "on": _action(entry.data.get(CONF_POWER_ON_LABEL)),
+                    "off": _action(entry.data.get(CONF_POWER_OFF_LABEL)),
+                },
+            )
+        hass.config_entries.async_update_entry(
+            entry, data={k: v for k, v in entry.data.items() if k not in power_keys}
         )
 
     station = Station(hass, entry, device.id)

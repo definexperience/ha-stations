@@ -59,6 +59,12 @@ const I18N = {
     no_stations: "No stations yet.",
     no_stations_admin: "Add a station under Settings → Devices & services, or with the button above.",
     no_match: "No station matches your search.",
+    sort: "Sort",
+    sort_name: "Name",
+    sort_area: "Area",
+    sort_floor: "Floor",
+    no_area: "No area",
+    no_floor: "No floor",
     devices: "Devices",
     device_count: (n) => `${n} device${n === 1 ? "" : "s"}`,
     unavailable_count: (n) => `${n} unavailable`,
@@ -204,6 +210,12 @@ Where it stands and how to reach it.
     no_stations: "Nog geen stations.",
     no_stations_admin: "Voeg een station toe via Instellingen → Apparaten & diensten, of met de knop hierboven.",
     no_match: "Geen station gevonden.",
+    sort: "Sorteren",
+    sort_name: "Naam",
+    sort_area: "Ruimte",
+    sort_floor: "Verdieping",
+    no_area: "Geen ruimte",
+    no_floor: "Geen verdieping",
     devices: "Apparaten",
     device_count: (n) => `${n} apparaat${n === 1 ? "" : "en"}`,
     unavailable_count: (n) => `${n} onbereikbaar`,
@@ -524,6 +536,15 @@ ha-icon { --mdc-icon-size: 20px; flex: none; }
 .stat { display: inline-flex; align-items: center; gap: 6px; height: 32px; padding: 0 12px; border-radius: 16px; background: var(--st-chip); font-size: 13px; }
 .stat.bad { background: color-mix(in srgb, var(--st-bad) 16%, transparent); color: var(--st-bad); font-weight: 500; }
 
+.sort {
+  display: flex; align-items: center; gap: 6px; height: 44px; padding: 0 6px 0 14px;
+  background: var(--st-card); border: 1px solid var(--st-line); border-radius: 22px;
+}
+.sort select { border: 0; outline: 0; background: none; font: inherit; font-size: 15px; color: inherit; height: 100%; cursor: pointer; }
+.sort select option { color: var(--primary-text-color); background: var(--card-background-color); }
+.group-head { display: flex; align-items: center; gap: 8px; margin: 24px 0 10px; font-size: 15px; font-weight: 500; color: var(--st-muted); }
+.group-head:first-child { margin-top: 0; }
+.group-head .count { font-weight: 400; }
 .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 16px; }
 .station-card { display: flex; flex-direction: column; overflow: hidden; cursor: pointer; text-decoration: none; color: inherit; transition: box-shadow .15s, transform .15s; }
 .station-card:hover { box-shadow: 0 4px 14px rgba(0,0,0,.15); transform: translateY(-1px); }
@@ -738,6 +759,13 @@ class StationsPanel extends HTMLElement {
     this._list = null;
     this._detail = null;
     this._search = "";
+    this._sort = "name";
+    try {
+      const saved = localStorage.getItem("stations.sort");
+      if (["name", "area", "floor"].includes(saved)) this._sort = saved;
+    } catch (e) {
+      /* storage unavailable: keep the default */
+    }
     this._editing = false;
     this._editMode = "write";
     this._draft = "";
@@ -1091,11 +1119,61 @@ class StationsPanel extends HTMLElement {
       body = `
         <div class="list-top">
           <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="search" type="search" placeholder="${esc(this.t("search"))}" value="${esc(this._search)}" autocomplete="off"></label>
+          <label class="sort" title="${esc(this.t("sort"))}"><ha-icon icon="mdi:sort"></ha-icon><select id="sort" aria-label="${esc(this.t("sort"))}">${["name", "area", "floor"]
+            .map((k) => `<option value="${k}" ${this._sort === k ? "selected" : ""}>${esc(this.t(`sort_${k}`))}</option>`)
+            .join("")}</select></label>
           <div class="stats" id="list-stats">${this._statsTemplate(problems)}</div>
         </div>
-        ${rows.length ? `<div class="grid">${rows.map(({ st, match }) => this._stationCardTemplate(st, match)).join("")}</div>` : `<div class="card empty">${esc(this.t("no_match"))}</div>`}`;
+        ${rows.length ? this._groupsTemplate(rows) : `<div class="card empty">${esc(this.t("no_match"))}</div>`}`;
     }
     return `${this._toolbar(esc(this.t("stations")), { actions })}<div class="content">${body}</div>`;
+  }
+
+  /** Sort the visible stations and split them into groups for headings. */
+  _groupedStations(rows) {
+    const byName = (a, b) => a.st.name.localeCompare(b.st.name);
+    if (this._sort === "name") return [{ title: null, rows: [...rows].sort(byName) }];
+    const groups = new Map();
+    for (const row of rows) {
+      const st = row.st;
+      const key = this._sort === "area" ? st.area_id || "" : st.floor_id || "";
+      if (!groups.has(key)) {
+        groups.set(key, {
+          key,
+          title: this._sort === "area" ? st.area_name || this.t("no_area") : st.floor_name || this.t("no_floor"),
+          level: st.floor_level,
+          rows: [],
+        });
+      }
+      groups.get(key).rows.push(row);
+    }
+    const byArea = (a, b) => (a.st.area_name || "\uffff").localeCompare(b.st.area_name || "\uffff") || byName(a, b);
+    const list = [...groups.values()];
+    for (const g of list) g.rows.sort(this._sort === "floor" ? byArea : byName);
+    // Floors by level (lowest first, floors without a level after), then name.
+    // Stations without an area or floor always come last.
+    list.sort((a, b) => {
+      if (!a.key !== !b.key) return a.key ? -1 : 1;
+      if (this._sort === "floor") {
+        const la = a.level ?? Infinity;
+        const lb = b.level ?? Infinity;
+        if (la !== lb) return la < lb ? -1 : 1;
+      }
+      return a.title.localeCompare(b.title);
+    });
+    return list;
+  }
+
+  _groupsTemplate(rows) {
+    const icon = this._sort === "area" ? "mdi:map-marker-outline" : "mdi:home-floor-0";
+    return this._groupedStations(rows)
+      .map(
+        (g) =>
+          `${g.title ? `<h3 class="group-head"><ha-icon icon="${icon}"></ha-icon>${esc(g.title)} <span class="count">· ${g.rows.length}</span></h3>` : ""}<div class="grid">${g.rows
+            .map(({ st, match }) => this._stationCardTemplate(st, match))
+            .join("")}</div>`
+      )
+      .join("");
   }
 
   _statsTemplate(problems) {
@@ -1777,6 +1855,16 @@ class StationsPanel extends HTMLElement {
 
   _handleChange(e) {
     const t = e.target;
+    if (t.id === "sort") {
+      this._sort = t.value;
+      try {
+        localStorage.setItem("stations.sort", this._sort);
+      } catch (err) {
+        /* not remembered, still sorted */
+      }
+      this._render();
+      return;
+    }
     if (this._powerEdit && t.dataset.pwMode) {
       const which = t.dataset.pwMode;
       const mode = t.value === "null" ? null : t.value;
@@ -1952,9 +2040,13 @@ class StationsPanel extends HTMLElement {
             .then((labels) => {
               if (!this._powerEdit) return;
               this._powerEdit.labels = labels.sort((a, b) => a.name.localeCompare(b.name));
+              // A station without power settings starts in label mode with the
+              // "Power on" / "Power off" labels, like a newly created station.
+              const unset = !p.on?.mode && !p.off?.mode;
               for (const which of ["on", "off"]) {
                 const c = this._powerEdit[which];
                 if (!c.label_id) c.label_id = this._defaultPowerLabel(which);
+                if (unset && c.mode === null && c.label_id) c.mode = "label";
               }
               this._renderPower();
             })
