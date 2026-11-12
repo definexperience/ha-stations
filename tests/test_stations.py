@@ -984,6 +984,10 @@ async def test_batch_creates_stations_labels_areas_and_members(
     pump, _ = _make_device(hass, other.entry_id, "Pump", None, ("power",))
     moved, _ = _make_device(hass, other.entry_id, "Moved", old.data["label_id"], ("power",))
     shared, _ = _make_device(hass, other.entry_id, "Shared", old.data["label_id"], ("power",))
+    ent_reg = er.async_get(hass)
+    script = ent_reg.async_get_or_create("script", "test", "start_pump")
+    helper = ent_reg.async_get_or_create("sensor", "test", "runtime")
+    ent_reg.async_update_entity(helper.entity_id, labels={old.data["label_id"]})
     client = await hass_ws_client(hass)
 
     stations = [
@@ -994,12 +998,20 @@ async def test_batch_creates_stations_labels_areas_and_members(
             "label_color": "blue",
             "devices": [{"device_id": pump.id}, {"device_id": moved.id, "move": True}],
         },
-        {"name": "Rack", "label_name": "Network rack", "area_id": hall.id},
+        {
+            "name": "Rack",
+            "label_name": "Network rack",
+            "area_id": hall.id,
+            # The pump is in two new stations; a separate entity moves.
+            "devices": [{"device_id": pump.id}],
+            "entities": [{"entity_id": helper.entity_id, "move": True}],
+        },
         {
             "name": "Bench",
             "label_id": mine.label_id,
             "area_name": "hall",
             "devices": [{"device_id": shared.id, "move": False}],
+            "entities": [{"entity_id": script.entity_id}],
         },
     ]
     plan = await _batch(client, stations, {"mode": "default"}, dry_run=True)
@@ -1007,6 +1019,8 @@ async def test_batch_creates_stations_labels_areas_and_members(
     assert plan["power_labels_created"] == ["Power on", "Power off"]
     assert plan["stations"][0]["area_created"] is True
     assert plan["stations"][0]["moves"] == {moved.id: ["Old desk"]}
+    assert plan["stations"][1]["moves"] == {helper.entity_id: ["Old desk"]}
+    assert plan["stations"][2]["entities"] == [script.entity_id]
     assert plan["stations"][2]["area_id"] == hall.id  # matched by name
     assert lab_reg.async_get_label_by_name("Power on") is None
 
@@ -1031,9 +1045,12 @@ async def test_batch_creates_stations_labels_areas_and_members(
     assert station_area["Bench"] == hall.id
 
     pump_label = entries["Pump A"].unique_id
-    assert dev_reg.async_get(pump.id).labels == {pump_label}
+    rack_label = entries["Rack"].unique_id
+    assert dev_reg.async_get(pump.id).labels == {pump_label, rack_label}
     assert dev_reg.async_get(moved.id).labels == {pump_label}  # moved
     assert dev_reg.async_get(shared.id).labels == {old.data["label_id"], mine.label_id}
+    assert ent_reg.async_get(script.entity_id).labels == {mine.label_id}
+    assert ent_reg.async_get(helper.entity_id).labels == {rack_label}  # moved
 
     power_on = lab_reg.async_get_label_by_name("Power on")
     await client.send_json_auto_id({"type": "stations/get", "entry_id": entries["Rack"].entry_id})

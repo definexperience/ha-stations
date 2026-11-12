@@ -84,10 +84,11 @@ HACS shows an update whenever a new release is published. HACS only works with p
 
 1. **Stations.** One row per station: name, label, icon, colour and area. Type the names, or copy rows from a spreadsheet (columns: name, area, label) and paste them into a name field. Leave the label empty to create a new label called "Station <name>", type your own label name, or pick an existing label. New labels get the Stations icon in indigo; change either per row. Type an area that doesn't exist yet and it is created. Problems (a name used twice, a label that another station already uses) are shown on the row.
 2. **Power.** The default "Power on" / "Power off" labels, your own labels, or none, for all new stations at once.
-3. **Devices.** Choose the station for each device. **Suggest by area** fills in devices whose area matches a new station's area. Devices that are already in a station are greyed out at the bottom; you can still choose them, and then decide whether to move them or keep them in both stations.
-4. **Review.** Shows per station which label and area are new and how many devices it gets.
+3. **Devices.** The new stations are shown as tiles. Choose one, then click the devices and separate entities (helpers, scripts, groups) that belong to it; open a device to pick single entities. Whatever you add moves down the list and appears as a chip under the station; click its × to take it out. Something can be in more than one station: it is then marked with a warning. For a device that already is in a station, the wizard asks whether to keep it there as well or move it.
+4. **Review.** Shows per station which label and area are new, how much it gets, what moves and what is shared with another station.
 
 ![Setup wizard](docs/setup-wizard.png)
+![Choosing devices per station](docs/setup-wizard-devices.png)
 
 **One at a time.** Go to **Settings → Devices & services → Add integration** and search for **Stations** (or use **Single station dialog** at the top of the wizard). Enter a name, optionally pick an existing label (empty creates "Station <name>") and the area where the station stands, and check the power on / power off labels. A label that another station already uses is refused with the name of that station.
 

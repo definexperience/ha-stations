@@ -173,19 +173,25 @@ const I18N = {
     wz_power_on_label: "Power on label",
     wz_power_off_label: "Power off label",
     wz_power_off_empty: "Not used (switch off what Power on switched on)",
-    wz_devices_help: "Choose the station for each device. Devices that are already in a station are greyed out at the bottom; you can still choose them.",
     wz_all_areas: "All areas",
-    wz_suggest: "Suggest by area",
-    wz_suggested: (n) => `${n} device${n === 1 ? "" : "s"} suggested`,
-    wz_suggest_none: "No devices match the areas of the new stations.",
-    wz_no_station: "—",
-    wz_move: (name) => `Move from ${name}`,
-    wz_keep: (name) => `Also keep in ${name}`,
+    wz_devices_help: "Choose a station, then click the devices and separate entities that belong to it. Click a name under a station to take it out again. Something that ends up in more than one station is marked with a warning.",
+    wz_pick_station: "Choose a station first.",
+    wz_search_items: "Search devices and entities…",
+    wz_tile_empty: "Nothing linked yet",
     wz_in_station: (name) => `in ${name}`,
-    wz_hide_taken: "Hide devices in other stations",
-    wz_sep_taken: "Already in a station",
+    wz_in_n: (n) => `in ${n} stations`,
+    wz_moves_from: (names) => `moves from ${names}`,
+    wz_via_device: "with its device",
+    wz_ask: (item, from, to) => `${item} is already in ${from}. Keep it there as well, or move it to ${to}?`,
+    wz_keep_both: "Keep in both",
+    wz_move_to: (name) => `Move to ${name}`,
+    wz_count: (n) => `${n} linked`,
+    wz_entities_n: (n) => `${n} entit${n === 1 ? "y" : "ies"}`,
+    wz_shared: (n) => `${n} also in another station`,
+    wz_err_entity_not_found: "An entity no longer exists or belongs to a station.",
+    wz_no_station: "—",
     wz_no_devices: "No devices match.",
-    wz_count: (n) => `${n} device${n === 1 ? "" : "s"}`,
+    wz_no_items: "Nothing matches.",
     wz_review_help: "Nothing has been created yet. Check the list and press Create.",
     wz_label_new: "new",
     wz_label_existing: "existing",
@@ -207,7 +213,6 @@ const I18N = {
     wz_err_label_not_found: "This label no longer exists.",
     wz_err_area_not_found: "This area no longer exists.",
     wz_err_device_not_found: "A device no longer exists or is a station.",
-    wz_err_device_duplicate: "A device is chosen for two stations.",
     wz_err_power_label_required: "Choose at least one power label.",
     template: `## Purpose
 What this station is for.
@@ -402,19 +407,25 @@ Where it stands and how to reach it.
     wz_power_on_label: "Label voor aanzetten",
     wz_power_off_label: "Label voor uitzetten",
     wz_power_off_empty: "Niet gebruikt (uitzetten wat Aanzetten aanzette)",
-    wz_devices_help: "Kies per apparaat het station. Apparaten die al in een station zitten staan grijs onderaan; je kunt ze toch kiezen.",
     wz_all_areas: "Alle ruimtes",
-    wz_suggest: "Voorstel op ruimte",
-    wz_suggested: (n) => `${n} ${n === 1 ? "apparaat" : "apparaten"} voorgesteld`,
-    wz_suggest_none: "Geen apparaten in de ruimtes van de nieuwe stations.",
-    wz_no_station: "—",
-    wz_move: (name) => `Verplaatsen uit ${name}`,
-    wz_keep: (name) => `Ook in ${name} houden`,
+    wz_devices_help: "Kies een station en klik daarna op de apparaten en losse entiteiten die erbij horen. Klik op een naam onder een station om die er weer uit te halen. Wat in meer dan één station komt, krijgt een waarschuwing.",
+    wz_pick_station: "Kies eerst een station.",
+    wz_search_items: "Zoek apparaten en entiteiten…",
+    wz_tile_empty: "Nog niets gekoppeld",
     wz_in_station: (name) => `in ${name}`,
-    wz_hide_taken: "Apparaten in andere stations verbergen",
-    wz_sep_taken: "Al in een station",
+    wz_in_n: (n) => `in ${n} stations`,
+    wz_moves_from: (names) => `verhuist uit ${names}`,
+    wz_via_device: "met het apparaat",
+    wz_ask: (item, from, to) => `${item} zit al in ${from}. Daar ook houden, of verplaatsen naar ${to}?`,
+    wz_keep_both: "In beide houden",
+    wz_move_to: (name) => `Verplaatsen naar ${name}`,
+    wz_count: (n) => `${n} gekoppeld`,
+    wz_entities_n: (n) => `${n} entiteit${n === 1 ? "" : "en"}`,
+    wz_shared: (n) => `${n} ook in een ander station`,
+    wz_err_entity_not_found: "Een entiteit bestaat niet meer of hoort bij een station.",
+    wz_no_station: "—",
     wz_no_devices: "Geen apparaten gevonden.",
-    wz_count: (n) => `${n} ${n === 1 ? "apparaat" : "apparaten"}`,
+    wz_no_items: "Niets gevonden.",
     wz_review_help: "Er is nog niets aangemaakt. Controleer de lijst en klik op Aanmaken.",
     wz_label_new: "nieuw",
     wz_label_existing: "bestaand",
@@ -436,7 +447,6 @@ Where it stands and how to reach it.
     wz_err_label_not_found: "Dit label bestaat niet meer.",
     wz_err_area_not_found: "Deze ruimte bestaat niet meer.",
     wz_err_device_not_found: "Een apparaat bestaat niet meer of is een station.",
-    wz_err_device_duplicate: "Een apparaat is voor twee stations gekozen.",
     wz_err_power_label_required: "Kies minstens één aan/uit-label.",
     template: `## Doel
 Waar dit station voor is.
@@ -995,6 +1005,51 @@ textarea.editor:focus { outline: 2px solid var(--primary-color); outline-offset:
 .wz-done ha-icon.big { --mdc-icon-size: 56px; color: var(--st-ok); }
 .wz-done ul { list-style: none; padding: 0; margin: 16px auto; max-width: 480px; text-align: left; }
 .wz-done li { padding: 6px 0; border-top: 1px solid var(--st-line); display: flex; gap: 8px; align-items: center; }
+
+.wz-tiles { display: grid; grid-template-columns: repeat(auto-fill, minmax(230px, 1fr)); gap: 10px; }
+.wz-tile { border: 2px solid var(--st-line); border-radius: 10px; padding: 10px 12px; cursor: pointer; background: var(--st-card); outline: none; }
+.wz-tile:hover { border-color: color-mix(in srgb, var(--primary-color) 50%, var(--st-line)); }
+.wz-tile:focus-visible { box-shadow: 0 0 0 2px var(--primary-color); }
+.wz-tile.sel { border-color: var(--primary-color); background: color-mix(in srgb, var(--primary-color) 9%, var(--st-card)); box-shadow: 0 0 0 3px color-mix(in srgb, var(--primary-color) 18%, transparent); }
+.wz-tile .t { font-weight: 500; font-size: 15px; display: flex; align-items: center; gap: 8px; }
+.wz-tile .t .dot { margin: 0; }
+.wz-tile .t .n { margin-left: auto; font-size: 12px; font-weight: 400; color: var(--st-muted); }
+.wz-tile .a { font-size: 12px; color: var(--st-muted); margin-top: 1px; }
+.wz-tile .chips { display: flex; flex-wrap: wrap; gap: 4px; margin: 8px 0 0; }
+.wz-chip { display: inline-flex; align-items: center; gap: 4px; font-size: 12px; padding: 2px 2px 2px 8px; border-radius: 10px; background: var(--st-chip); max-width: 100%; }
+.wz-chip.ent { font-style: italic; }
+.wz-chip.warn { background: color-mix(in srgb, var(--st-warn) 24%, transparent); }
+.wz-chip ha-icon { --mdc-icon-size: 13px; }
+.wz-chip button { border: 0; background: none; color: var(--st-muted); cursor: pointer; padding: 0 5px; font-size: 14px; line-height: 1; border-radius: 8px; }
+.wz-chip button:hover { color: var(--primary-text-color); background: rgba(127,127,127,.2); }
+.wz-divider { height: 1px; background: var(--st-line); margin: 18px 0 14px; }
+.wz-item { border-top: 1px solid var(--st-line); }
+.wz-item.nested { border-top: 0; }
+.wz-line { display: flex; align-items: center; gap: 10px; padding: 8px 6px; cursor: pointer; border-radius: 6px; }
+.wz-line:hover { background: var(--st-chip); }
+.wz-item.nested .wz-line { padding: 5px 6px 5px 34px; }
+.wz-box { width: 18px; height: 18px; border-radius: 4px; border: 2px solid var(--st-muted); flex: none; display: inline-flex; align-items: center; justify-content: center; color: var(--text-primary-color, #fff); }
+.wz-box.on { background: var(--primary-color); border-color: var(--primary-color); }
+.wz-box ha-icon { --mdc-icon-size: 14px; }
+.wz-main { flex: 1; min-width: 0; }
+.wz-main .nm { overflow-wrap: anywhere; }
+.wz-main .sb { font-size: 12px; color: var(--st-muted); overflow-wrap: anywhere; }
+.wz-tags { display: flex; flex-wrap: wrap; gap: 4px; justify-content: flex-end; }
+.wz-tag { display: inline-flex; align-items: center; gap: 3px; font-size: 11px; padding: 1px 8px; border-radius: 10px; background: var(--st-chip); color: var(--st-muted); white-space: nowrap; }
+.wz-tag.new { background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
+.wz-tag.warn { background: color-mix(in srgb, var(--st-warn) 24%, transparent); color: var(--primary-text-color); font-weight: 500; }
+.wz-tag.warn ha-icon { --mdc-icon-size: 12px; color: var(--st-warn); }
+.wz-tag.struck { text-decoration: line-through; }
+.wz-item.taken > .wz-line .wz-main, .wz-item.assigned > .wz-line .wz-main, .wz-item.assigned > .wz-line .wz-box:not(.on) { opacity: .5; }
+.wz-more { border: 0; background: none; color: var(--primary-color); font-size: 12px; cursor: pointer; display: inline-flex; align-items: center; gap: 2px; padding: 4px 6px; border-radius: 12px; white-space: nowrap; }
+.wz-more:hover { background: color-mix(in srgb, var(--primary-color) 12%, transparent); }
+.wz-more ha-icon { --mdc-icon-size: 16px; }
+.wz-sub-list { padding-bottom: 6px; }
+.wz-ask { display: flex; flex-wrap: wrap; align-items: center; gap: 8px; margin: 0 6px 10px 34px; padding: 10px 12px; border-radius: 10px; background: color-mix(in srgb, var(--st-warn) 14%, transparent); font-size: 13px; }
+.wz-ask > span { flex: 1 1 260px; }
+.wz-ask ha-icon { --mdc-icon-size: 20px; color: var(--st-warn); }
+.wz-ask .btn { height: 32px; }
+@media (max-width: 600px) { .wz-line { flex-wrap: wrap; } .wz-tags { width: 100%; justify-content: flex-start; padding-left: 28px; } }
 
 .loading { padding: 48px; text-align: center; color: var(--st-muted); }
 `;
@@ -2105,10 +2160,12 @@ class StationsPanel extends HTMLElement {
       step: 0,
       rows: [this._wzNewRow(), this._wzNewRow(), this._wzNewRow()],
       power: { mode: "default", on: "", off: "" },
-      assign: {}, // device id -> { row: key, move: true }
+      members: {}, // "d:<device>" / "e:<entity>" -> { rows: [row keys], move }
+      selected: null,
+      ask: null,
+      open: new Set(),
       query: "",
       area: "",
-      hideTaken: false,
       errors: [],
       plan: null,
       busy: false,
@@ -2159,11 +2216,9 @@ class StationsPanel extends HTMLElement {
       const area = this._wzAreaByName(r.area);
       if (area) st.area_id = area.area_id;
       else if (r.area.trim()) st.area_name = r.area.trim();
-      st.devices = withDevices
-        ? Object.entries(w.assign)
-            .filter(([, a]) => a.row === r.key)
-            .map(([device_id, a]) => ({ device_id, move: a.move }))
-        : [];
+      const mine = withDevices ? Object.entries(w.members).filter(([, m]) => m.rows.includes(r.key)) : [];
+      st.devices = mine.filter(([k]) => k.startsWith("d:")).map(([k, m]) => ({ device_id: k.slice(2), move: Boolean(m.move) }));
+      st.entities = mine.filter(([k]) => k.startsWith("e:")).map(([k, m]) => ({ entity_id: k.slice(2), move: Boolean(m.move) }));
       return st;
     });
     const p = w.power;
@@ -2224,7 +2279,11 @@ class StationsPanel extends HTMLElement {
     }
     // Drop assignments to rows that were removed or emptied.
     const keys = new Set(this._wzRows().map((r) => r.key));
-    for (const [id, a] of Object.entries(w.assign)) if (!keys.has(a.row)) delete w.assign[id];
+    for (const [id, m] of Object.entries(w.members)) {
+      m.rows = m.rows.filter((k) => keys.has(k));
+      if (!m.rows.length) delete w.members[id];
+    }
+    w.ask = null;
     w.message = "";
     w.step = step;
     this._render();
@@ -2277,39 +2336,6 @@ class StationsPanel extends HTMLElement {
     w.errors = [];
     this._render();
     this._toast(this.t("wz_pasted", lines.length));
-  }
-
-  _wzSuggest() {
-    const w = this._wizard;
-    const byArea = new Map();
-    for (const r of this._wzRows()) {
-      const area = this._wzAreaByName(r.area);
-      if (!area) continue;
-      // An area with two new stations is ambiguous: suggest nothing there.
-      byArea.set(area.area_id, byArea.has(area.area_id) ? null : r.key);
-    }
-    let n = 0;
-    for (const { dev, taken } of this._wzDevices()) {
-      const key = byArea.get(dev.area_id);
-      if (!key || taken.length || w.assign[dev.id]) continue;
-      w.assign[dev.id] = { row: key, move: true };
-      n++;
-    }
-    this._render();
-    this._toast(n ? this.t("wz_suggested", n) : this.t("wz_suggest_none"));
-  }
-
-  _wzDevices() {
-    const w = this._wizard;
-    const stationDevices = new Set(w.stations.map((s) => s.device_id));
-    const ofLabel = this._wzStationOfLabel();
-    return Object.values(this._hass.devices || {})
-      .filter((dev) => !stationDevices.has(dev.id) && dev.entry_type !== "service")
-      .map((dev) => ({
-        dev,
-        name: dev.name_by_user || dev.name || dev.id,
-        taken: (dev.labels || []).filter((l) => ofLabel.has(l)).map((l) => ofLabel.get(l)),
-      }));
   }
 
   _wizardTemplate() {
@@ -2409,60 +2435,195 @@ class StationsPanel extends HTMLElement {
       ${radio("none", this.t("wz_power_none"))}`;
   }
 
+  /* Devices step: pick a station at the top, then click devices and
+   * separate entities below to give them to it. Keys are "d:<device id>" or
+   * "e:<entity id>"; w.members[key] = { rows: [row keys], move: bool|undefined }.
+   * "move" is asked once for things that already are in an existing station. */
+  _wzItems() {
+    const w = this._wizard;
+    const stationDevices = new Set(w.stations.map((s) => s.device_id));
+    const ofLabel = this._wzStationOfLabel();
+    const inStations = (labels) => (labels || []).filter((l) => ofLabel.has(l)).map((l) => ofLabel.get(l));
+    const ents = Object.values(this._hass.entities || {});
+    const byDevice = new Map();
+    for (const e of ents) {
+      if (!e.device_id || e.hidden) continue;
+      if (!byDevice.has(e.device_id)) byDevice.set(e.device_id, []);
+      byDevice.get(e.device_id).push(e);
+    }
+    const entItem = (e, device) => ({
+      key: `e:${e.entity_id}`,
+      name: this._hass.states[e.entity_id]?.attributes.friendly_name || e.name || e.entity_id,
+      sub: e.entity_id,
+      area_id: e.area_id || device?.area_id,
+      existing: inStations(e.labels),
+      // In a station through its device: always stays there too.
+      inherited: device ? inStations(device.labels) : [],
+      device: device?.id,
+    });
+    const devices = Object.values(this._hass.devices || {})
+      .filter((dev) => !stationDevices.has(dev.id) && dev.entry_type !== "service")
+      .map((dev) => ({
+        key: `d:${dev.id}`,
+        name: dev.name_by_user || dev.name || dev.id,
+        sub: [dev.manufacturer, dev.model].filter(Boolean).join(" · "),
+        area_id: dev.area_id,
+        existing: inStations(dev.labels),
+        inherited: [],
+        entities: (byDevice.get(dev.id) || []).map((e) => entItem(e, dev)).sort((a, b) => a.name.localeCompare(b.name)),
+      }));
+    // Separate entities: helpers, scripts, groups and the like, not
+    // Home Assistant's own bookkeeping entities.
+    const skip = new Set(["person", "zone", "tts", "stt", "todo", "sun", "update", "conversation", "wake_word", "assist_satellite", "event", "tag", "device_tracker", "ai_task"]);
+    const separate = ents.filter((e) => !e.device_id && !e.hidden && !skip.has(e.entity_id.split(".")[0])).map((e) => entItem(e, null));
+    return { devices, separate };
+  }
+
+  _wzPlaces(item) {
+    const m = this._wizard.members[item.key];
+    const rows = m?.rows || [];
+    return rows.length + (m?.move ? 0 : item.existing.length) + (item.inherited?.length || 0);
+  }
+
+  _wzRowName(key) {
+    return this._wizard.rows.find((r) => r.key === key)?.name.trim() || "";
+  }
+
+  _wzToggle(key, item) {
+    const w = this._wizard;
+    const sel = w.selected;
+    if (!sel) {
+      this._toast(this.t("wz_pick_station"));
+      return;
+    }
+    const m = w.members[key] || { rows: [], move: undefined };
+    if (m.rows.includes(sel)) {
+      m.rows = m.rows.filter((r) => r !== sel);
+      if (!m.rows.length) delete w.members[key];
+      else w.members[key] = m;
+    } else if (item.existing.length && m.move === undefined) {
+      // In an existing station: ask once whether to keep it there or move it.
+      w.ask = { key, row: sel };
+    } else {
+      m.rows.push(sel);
+      w.members[key] = m;
+    }
+    this._wzRenderDevices();
+  }
+
+  _wzAnswer(move) {
+    const w = this._wizard;
+    const a = w.ask;
+    w.ask = null;
+    if (a && move !== null) w.members[a.key] = { rows: [a.row], move };
+    this._wzRenderDevices();
+  }
+
   _wzDevicesTemplate() {
     const w = this._wizard;
+    if (!w.selected || !this._wzRows().some((r) => r.key === w.selected)) w.selected = this._wzRows()[0]?.key;
     const areas = Object.values(this._hass.areas || {}).sort((a, b) => a.name.localeCompare(b.name));
-    const rows = this._wzRows();
-    const totals = rows
-      .map((r) => {
-        const n = Object.values(w.assign).filter((a) => a.row === r.key).length;
-        return `<span class="wz-total"><b>${esc(r.name.trim())}</b> · ${esc(this.t("wz_count", n))}</span>`;
-      })
-      .join("");
     return `
       <p class="wz-help">${esc(this.t("wz_devices_help"))}</p>
+      <div class="wz-tiles" id="wz-tiles">${this._wzTilesTemplate()}</div>
+      <div class="wz-divider"></div>
       <div class="wz-bar">
-        <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="wz-dev-search" type="search" placeholder="${esc(this.t("search_devices"))}" value="${esc(w.query)}" autocomplete="off"></label>
+        <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="wz-dev-search" type="search" placeholder="${esc(this.t("wz_search_items"))}" value="${esc(w.query)}" autocomplete="off"></label>
         <select class="wz-select" id="wz-dev-area"><option value="">${esc(this.t("wz_all_areas"))}</option>${areas
           .map((a) => `<option value="${esc(a.area_id)}" ${w.area === a.area_id ? "selected" : ""}>${esc(a.name)}</option>`)
           .join("")}<option value="-" ${w.area === "-" ? "selected" : ""}>${esc(this.t("no_area"))}</option></select>
-        <button class="btn outline" data-action="wz-suggest"><ha-icon icon="mdi:auto-fix"></ha-icon>${esc(this.t("wz_suggest"))}</button>
       </div>
-      <div class="wz-totals" id="wz-totals">${totals}</div>
-      <label class="wz-check" style="margin-bottom:6px"><input type="checkbox" id="wz-hide-taken" ${w.hideTaken ? "checked" : ""}>${esc(this.t("wz_hide_taken"))}</label>
       <div id="wz-devlist">${this._wzDeviceList()}</div>`;
+  }
+
+  _wzTilesTemplate() {
+    const w = this._wizard;
+    const { devices, separate } = this._wzItems();
+    const byKey = new Map([...devices, ...devices.flatMap((d) => d.entities), ...separate].map((i) => [i.key, i]));
+    return this._wzRows()
+      .map((r) => {
+        const label = r.labelId ? w.labels.find((l) => l.label_id === r.labelId) : null;
+        const color = labelColor(label ? label.color : r.labelColor);
+        const items = Object.entries(w.members).filter(([, m]) => m.rows.includes(r.key)).map(([k]) => byKey.get(k)).filter(Boolean);
+        const chips = items.length
+          ? items
+              .map((i) => {
+                const multi = this._wzPlaces(i) > 1;
+                const m = w.members[i.key];
+                const title = multi ? this.t("wz_in_n", this._wzPlaces(i)) : m.move ? this.t("wz_moves_from", i.existing.join(", ")) : "";
+                return `<span class="wz-chip ${i.key[0] === "e" ? "ent" : ""} ${multi ? "warn" : ""}" title="${esc(title)}">${multi ? '<ha-icon icon="mdi:alert"></ha-icon>' : m.move ? '<ha-icon icon="mdi:swap-horizontal"></ha-icon>' : ""}${esc(i.name)}<button data-action="wz-unassign" data-key="${esc(i.key)}" data-row="${r.key}" aria-label="${esc(this.t("remove_member"))}">×</button></span>`;
+              })
+              .join("")
+          : `<span class="muted small">${esc(this.t("wz_tile_empty"))}</span>`;
+        const area = this._wzAreaByName(r.area)?.name || r.area.trim();
+        return `
+          <div class="wz-tile ${w.selected === r.key ? "sel" : ""}" role="button" tabindex="0" data-action="wz-select" data-row="${r.key}">
+            <div class="t"><span class="dot" style="background:${color}"></span>${esc(r.name.trim())}<span class="n">${items.length || ""}</span></div>
+            ${area ? `<div class="a">${esc(area)}</div>` : ""}
+            <div class="chips">${chips}</div>
+          </div>`;
+      })
+      .join("");
   }
 
   _wzDeviceList() {
     const w = this._wizard;
     const q = w.query.trim().toLowerCase();
     const areaName = (id) => (id && this._hass.areas?.[id]?.name) || "";
-    const rows = this._wzRows();
-    const list = this._wzDevices()
-      .filter(({ dev }) => !w.area || (w.area === "-" ? !dev.area_id : dev.area_id === w.area))
-      .filter(({ dev, name }) => !q || [name, dev.manufacturer, dev.model, areaName(dev.area_id)].some((v) => v && v.toLowerCase().includes(q)))
-      .filter(({ dev, taken }) => !w.hideTaken || !taken.length || w.assign[dev.id])
-      .sort((a, b) => a.name.localeCompare(b.name));
-    const free = list.filter((x) => !x.taken.length);
-    const taken = list.filter((x) => x.taken.length);
-    const row = ({ dev, name, taken: other }) => {
-      const a = w.assign[dev.id];
-      const sub = [dev.manufacturer, dev.model, areaName(dev.area_id)].filter(Boolean).join(" · ");
-      const options = rows.map((r) => `<option value="${r.key}" ${a?.row === r.key ? "selected" : ""}>${esc(r.name.trim())}</option>`).join("");
-      const names = other.join(", ");
-      const move =
-        a && other.length
-          ? `<div class="d-move"><label><input type="radio" name="mv-${esc(dev.id)}" data-wz-move="${esc(dev.id)}" value="1" ${a.move ? "checked" : ""}>${esc(this.t("wz_move", names))}</label><label><input type="radio" name="mv-${esc(dev.id)}" data-wz-move="${esc(dev.id)}" value="0" ${a.move ? "" : "checked"}>${esc(this.t("wz_keep", names))}</label></div>`
-          : "";
+    const { devices, separate } = this._wzItems();
+    const match = (i) =>
+      (!w.area || (w.area === "-" ? !i.area_id : i.area_id === w.area)) &&
+      (!q || [i.name, i.sub, areaName(i.area_id)].some((v) => v && v.toLowerCase().includes(q)) || (i.entities || []).some((e) => e.name.toLowerCase().includes(q)));
+    // Free first, then in an existing station, then given to a new station.
+    const rank = (i) => (w.members[i.key] ? 2 : i.existing.length ? 1 : 0);
+    const order = (list) => list.filter(match).sort((a, b) => rank(a) - rank(b) || a.name.localeCompare(b.name));
+    const selName = this._wzRowName(w.selected);
+    const row = (i, nested = false) => {
+      const m = w.members[i.key];
+      const mine = m?.rows.includes(w.selected);
+      const viaDevice = nested && w.members[`d:${i.device}`]?.rows.includes(w.selected);
+      const places = this._wzPlaces(i);
+      const tags = [
+        places > 1 ? `<span class="wz-tag warn"><ha-icon icon="mdi:alert"></ha-icon>${esc(this.t("wz_in_n", places))}</span>` : "",
+        ...i.existing.map((n) => `<span class="wz-tag ${m?.move ? "struck" : ""}">${esc(this.t("wz_in_station", n))}</span>`),
+        ...(nested ? [] : i.inherited || []).map((n) => `<span class="wz-tag">${esc(this.t("wz_in_station", n))}</span>`),
+        ...(m?.rows || []).map((k) => `<span class="wz-tag new">→ ${esc(this._wzRowName(k))}</span>`),
+        viaDevice ? `<span class="wz-tag">${esc(this.t("wz_via_device"))}</span>` : "",
+      ].join("");
+      const expandable = !nested && i.entities?.length;
+      const open = expandable && w.open.has(i.key);
+      const asking = w.ask?.key === i.key;
+      const ask = asking
+        ? `<div class="wz-ask"><ha-icon icon="mdi:help-circle-outline"></ha-icon><span>${esc(this.t("wz_ask", i.name, i.existing.join(", "), selName))}</span>
+             <button class="btn outline" data-action="wz-keep">${esc(this.t("wz_keep_both"))}</button>
+             <button class="btn" data-action="wz-move">${esc(this.t("wz_move_to", selName))}</button>
+             <button class="btn text" data-action="wz-ask-cancel">${esc(this.t("cancel"))}</button></div>`
+        : "";
       return `
-        <div class="wz-dev ${other.length ? "taken" : ""} ${a ? "assigned" : ""}">
-          <div><div class="d-name">${esc(name)}${other.length ? `<span class="d-tag">${esc(this.t("wz_in_station", names))}</span>` : ""}</div>${sub ? `<div class="d-sub">${esc(sub)}</div>` : ""}</div>
-          <select class="wz-select" data-wz-assign="${esc(dev.id)}"><option value="">${esc(this.t("wz_no_station"))}</option>${options}</select>
-          ${move}
+        <div class="wz-item ${nested ? "nested" : ""} ${m ? "assigned" : i.existing.length ? "taken" : ""} ${places > 1 ? "multi" : ""}">
+          <div class="wz-line" data-action="wz-pick" data-key="${esc(i.key)}">
+            <span class="wz-box ${mine ? "on" : ""}">${mine ? '<ha-icon icon="mdi:check"></ha-icon>' : ""}</span>
+            <div class="wz-main"><div class="nm">${esc(i.name)}</div><div class="sb">${esc([i.sub, nested ? "" : areaName(i.area_id)].filter(Boolean).join(" · "))}</div></div>
+            <span class="wz-tags">${tags}</span>
+            ${expandable ? `<button class="wz-more" data-action="wz-expand" data-key="${esc(i.key)}" aria-expanded="${open}">${esc(this.t("wz_entities_n", i.entities.length))}<ha-icon icon="${open ? "mdi:chevron-up" : "mdi:chevron-down"}"></ha-icon></button>` : ""}
+          </div>
+          ${ask}
+          ${open ? `<div class="wz-sub-list">${i.entities.map((e) => row(e, true)).join("")}</div>` : ""}
         </div>`;
     };
-    if (!list.length) return `<div class="muted small" style="padding:12px 0">${esc(this.t("wz_no_devices"))}</div>`;
-    return `${free.map(row).join("")}${taken.length ? `<div class="wz-sep">${esc(this.t("wz_sep_taken"))}</div>${taken.map(row).join("")}` : ""}`;
+    const devs = order(devices);
+    const sep = order(separate);
+    const none = `<div class="muted small" style="padding:10px 0">${esc(this.t("wz_no_items"))}</div>`;
+    return `
+      <div class="wz-sep">${esc(this.t("tab_devices"))}</div>${devs.length ? devs.map((i) => row(i)).join("") : none}
+      <div class="wz-sep">${esc(this.t("other_entities"))}</div>${sep.length ? sep.map((i) => row(i)).join("") : none}`;
+  }
+
+  _wzRenderDevices() {
+    const tiles = this.shadowRoot.getElementById("wz-tiles");
+    if (tiles) tiles.innerHTML = this._wzTilesTemplate();
+    const list = this.shadowRoot.getElementById("wz-devlist");
+    if (list) list.innerHTML = this._wzDeviceList();
   }
 
   _wzReviewTemplate() {
@@ -2478,13 +2639,17 @@ class StationsPanel extends HTMLElement {
         const label = `<span class="label-chip" style="background:${labelColor(st.label_color)}"><ha-icon icon="${esc(st.label_icon || "stations:logo")}"></ha-icon>${esc(st.label_name)}</span>${st.label_created ? `<span class="wz-new">${esc(this.t("wz_label_new"))}</span>` : ""}`;
         const areaName = st.area_name || (st.area_id && this._hass.areas?.[st.area_id]?.name) || "";
         const moves = Object.entries(st.moves || {});
+        const { devices: allDev, separate: allSep } = this._wzItems();
+        const byKey = new Map([...allDev, ...allDev.flatMap((d) => d.entities), ...allSep].map((x) => [x.key, x]));
+        const shared = [...st.devices.map((id) => `d:${id}`), ...st.entities.map((id) => `e:${id}`)].filter((k) => byKey.has(k) && this._wzPlaces(byKey.get(k)) > 1).length;
         const movedFrom = [...new Set(moves.flatMap(([, names]) => names))].join(", ");
         return `
           <div class="wz-card ${errs.length ? "bad" : ""}">
             <div class="t">${esc(st.name || "—")}</div>
             <div class="r">${label}</div>
             ${areaName ? `<div class="r"><ha-icon icon="mdi:map-marker-outline"></ha-icon>${esc(areaName)}${st.area_created ? `<span class="wz-new">${esc(this.t("wz_area_new"))}</span>` : ""}</div>` : ""}
-            <div class="r" title="${esc(st.devices.map(devName).join(", "))}"><ha-icon icon="mdi:devices"></ha-icon>${esc(this.t("wz_count", st.devices.length))}${moves.length ? ` · ${esc(this.t("wz_moves", moves.length, movedFrom))}` : ""}</div>
+            <div class="r" title="${esc([...st.devices.map(devName), ...st.entities.map((id) => this._entityLabel(id))].join(", "))}"><ha-icon icon="mdi:devices"></ha-icon>${esc(this.t("wz_count", st.devices.length + st.entities.length))}${moves.length ? ` · ${esc(this.t("wz_moves", moves.length, movedFrom))}` : ""}</div>
+            ${shared ? `<div class="r" style="color:var(--primary-text-color)"><ha-icon icon="mdi:alert" style="color:var(--st-warn)"></ha-icon>${esc(this.t("wz_shared", shared))}</div>` : ""}
             ${errs.map((e) => `<div class="e">${esc(this._wzErrorText(e))}</div>`).join("")}
           </div>`;
       })
@@ -2512,7 +2677,7 @@ class StationsPanel extends HTMLElement {
         <ul>${ok
           .map(
             (s) =>
-              `<li><span class="label-chip" style="background:${labelColor(s.label_color)}"><ha-icon icon="${esc(s.label_icon || "stations:logo")}"></ha-icon>${esc(s.label_name)}</span><a href="/${this._panelPath()}/${esc(s.entry_id)}" data-action="nav">${esc(s.name)}</a><span class="muted small" style="margin-left:auto">${esc(this.t("wz_count", s.devices.length))}</span></li>`
+              `<li><span class="label-chip" style="background:${labelColor(s.label_color)}"><ha-icon icon="${esc(s.label_icon || "stations:logo")}"></ha-icon>${esc(s.label_name)}</span><a href="/${this._panelPath()}/${esc(s.entry_id)}" data-action="nav">${esc(s.name)}</a><span class="muted small" style="margin-left:auto">${esc(this.t("wz_count", s.devices.length + s.entities.length))}</span></li>`
           )
           .join("")}</ul>
         ${failed.length ? `<p class="muted">${esc(this.t("wz_done_partly"))} ${esc(failed.map((s) => s.name).join(", "))}</p>` : ""}
@@ -2580,36 +2745,12 @@ class StationsPanel extends HTMLElement {
       w.message = "";
       return true;
     }
-    if (t.dataset?.wzAssign) {
-      const id = t.dataset.wzAssign;
-      if (t.value) w.assign[id] = { row: Number(t.value), move: w.assign[id]?.move ?? true };
-      else delete w.assign[id];
-      this._wzRefreshDevices();
-      return true;
-    }
-    if (t.dataset?.wzMove) {
-      const a = w.assign[t.dataset.wzMove];
-      if (a) a.move = t.value === "1";
-      return true;
-    }
     if (t.id === "wz-dev-area") {
       w.area = t.value;
-      this._wzRefreshDevices();
-      return true;
-    }
-    if (t.id === "wz-hide-taken") {
-      w.hideTaken = t.checked;
-      this._wzRefreshDevices();
+      this._wzRenderDevices();
       return true;
     }
     return false;
-  }
-
-  _wzRefreshDevices() {
-    const list = this.shadowRoot.getElementById("wz-devlist");
-    if (list) list.innerHTML = this._wzDeviceList();
-    const totals = this.shadowRoot.getElementById("wz-totals");
-    if (totals) totals.outerHTML = this._wzDevicesTemplate().match(/<div class="wz-totals" id="wz-totals">[\s\S]*?<\/div>/)[0];
   }
 
   async _wzClick(action, el) {
@@ -2629,8 +2770,40 @@ class StationsPanel extends HTMLElement {
         this._render();
         return true;
       }
-      case "wz-suggest":
-        this._wzSuggest();
+      case "wz-select":
+        w.selected = Number(el.dataset.row);
+        w.ask = null;
+        this._wzRenderDevices();
+        return true;
+      case "wz-pick": {
+        const key = el.dataset.key;
+        const { devices, separate } = this._wzItems();
+        const item = [...devices, ...devices.flatMap((d) => d.entities), ...separate].find((i) => i.key === key);
+        if (item) this._wzToggle(key, item);
+        return true;
+      }
+      case "wz-unassign": {
+        const m = w.members[el.dataset.key];
+        if (m) {
+          m.rows = m.rows.filter((k) => String(k) !== el.dataset.row);
+          if (!m.rows.length) delete w.members[el.dataset.key];
+        }
+        this._wzRenderDevices();
+        return true;
+      }
+      case "wz-expand":
+        if (w.open.has(el.dataset.key)) w.open.delete(el.dataset.key);
+        else w.open.add(el.dataset.key);
+        this._wzRenderDevices();
+        return true;
+      case "wz-keep":
+        this._wzAnswer(false);
+        return true;
+      case "wz-move":
+        this._wzAnswer(true);
+        return true;
+      case "wz-ask-cancel":
+        this._wzAnswer(null);
         return true;
       case "wz-create":
         await this._wzCreate();
