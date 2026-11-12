@@ -1,7 +1,7 @@
 # Stations: project context
 
 Hand-over document for continuing development of the **Stations** custom integration for Home Assistant.
-It records what exists, why it was built this way, and what the user asked for. Current version: **1.4.0b4**.
+It records what exists, why it was built this way, and what the user asked for. Current version: **1.4.0**.
 
 ## 1. The goal
 
