@@ -909,3 +909,146 @@ async def test_power_entities_mode_and_fallback(hass: HomeAssistant, setup_http,
         {"type": "stations/set_power", "entry_id": entry.entry_id, "on": {"mode": "bogus"}, "off": {"mode": None}}
     )
     assert not (await ws.receive_json())["success"]
+
+
+async def _batch(client, stations, power=None, dry_run=False):
+    msg = {"type": "stations/create_batch", "stations": stations, "dry_run": dry_run}
+    if power is not None:
+        msg["power"] = power
+    await client.send_json_auto_id(msg)
+    reply = await client.receive_json()
+    assert reply["success"], reply
+    return reply["result"]
+
+
+async def test_batch_dry_run_reports_problems(
+    hass: HomeAssistant, setup_http, hass_ws_client
+) -> None:
+    """The review step sees every problem by row, and nothing is created."""
+    existing = await _create_station(hass, "Desk A")
+    lab_reg = lr.async_get(hass)
+    free = lab_reg.async_create("Spare")
+    labels_before = len(lab_reg.labels)
+    client = await hass_ws_client(hass)
+
+    result = await _batch(
+        client,
+        [
+            {"name": "Pump A"},
+            {"name": "pump a"},
+            {"name": ""},
+            {"name": "Desk A"},
+            {"name": "Other", "label_id": existing.data["label_id"]},
+            {"name": "Rack", "label_id": free.label_id},
+            {"name": "Rack 2", "label_id": free.label_id},
+            {"name": "Bench", "area_id": "nope", "devices": [{"device_id": "nope"}]},
+        ],
+        dry_run=True,
+    )
+    assert not result["created"]
+    found = {(e["row"], e["code"]) for e in result["errors"]}
+    assert found == {
+        (1, "name_duplicate"),
+        (2, "name_required"),
+        (3, "name_exists"),
+        (4, "label_in_use"),
+        (6, "label_duplicate"),
+        (7, "area_not_found"),
+        (7, "device_not_found"),
+    }
+    plan = result["stations"][0]
+    assert plan["label_name"] == "Station Pump A"
+    assert plan["label_created"] is True
+    assert result["stations"][5]["label_created"] is False
+
+    # Without dry_run the same problems block creation.
+    result = await _batch(client, [{"name": "Pump A"}, {"name": "Pump A"}])
+    assert not result["created"]
+    assert len(lab_reg.labels) == labels_before
+    assert len(hass.config_entries.async_entries(DOMAIN)) == 1
+
+
+async def test_batch_creates_stations_labels_areas_and_members(
+    hass: HomeAssistant, setup_http, hass_ws_client
+) -> None:
+    """Labels, areas, power settings and devices are set up in one go."""
+    old = await _create_station(hass, "Old desk")
+    lab_reg = lr.async_get(hass)
+    area_reg = ar.async_get(hass)
+    dev_reg = dr.async_get(hass)
+    hall = area_reg.async_create("Hall")
+    mine = lab_reg.async_create("My label", color="teal")
+    other = MockConfigEntry(domain="test")
+    other.add_to_hass(hass)
+    pump, _ = _make_device(hass, other.entry_id, "Pump", None, ("power",))
+    moved, _ = _make_device(hass, other.entry_id, "Moved", old.data["label_id"], ("power",))
+    shared, _ = _make_device(hass, other.entry_id, "Shared", old.data["label_id"], ("power",))
+    client = await hass_ws_client(hass)
+
+    stations = [
+        {
+            "name": "Pump A",
+            "area_name": "Basement",
+            "label_icon": "mdi:pump",
+            "label_color": "blue",
+            "devices": [{"device_id": pump.id}, {"device_id": moved.id, "move": True}],
+        },
+        {"name": "Rack", "label_name": "Network rack", "area_id": hall.id},
+        {
+            "name": "Bench",
+            "label_id": mine.label_id,
+            "area_name": "hall",
+            "devices": [{"device_id": shared.id, "move": False}],
+        },
+    ]
+    plan = await _batch(client, stations, {"mode": "default"}, dry_run=True)
+    assert plan["errors"] == []
+    assert plan["power_labels_created"] == ["Power on", "Power off"]
+    assert plan["stations"][0]["area_created"] is True
+    assert plan["stations"][0]["moves"] == {moved.id: ["Old desk"]}
+    assert plan["stations"][2]["area_id"] == hall.id  # matched by name
+    assert lab_reg.async_get_label_by_name("Power on") is None
+
+    result = await _batch(client, stations, {"mode": "default"})
+    await hass.async_block_till_done()
+    assert result["created"], result
+    entries = {e.title: e for e in hass.config_entries.async_entries(DOMAIN)}
+    assert set(entries) == {"Old desk", "Pump A", "Rack", "Bench"}
+
+    label = lab_reg.async_get_label(entries["Pump A"].unique_id)
+    assert (label.name, label.icon, label.color) == ("Station Pump A", "mdi:pump", "blue")
+    assert lab_reg.async_get_label(entries["Rack"].unique_id).name == "Network rack"
+    assert entries["Bench"].unique_id == mine.label_id
+
+    basement = area_reg.async_get_area_by_name("Basement")
+    station_area = {
+        title: dev_reg.async_get_device(identifiers={(DOMAIN, entry.entry_id)}).area_id
+        for title, entry in entries.items()
+    }
+    assert station_area["Pump A"] == basement.id
+    assert station_area["Rack"] == hall.id
+    assert station_area["Bench"] == hall.id
+
+    pump_label = entries["Pump A"].unique_id
+    assert dev_reg.async_get(pump.id).labels == {pump_label}
+    assert dev_reg.async_get(moved.id).labels == {pump_label}  # moved
+    assert dev_reg.async_get(shared.id).labels == {old.data["label_id"], mine.label_id}
+
+    power_on = lab_reg.async_get_label_by_name("Power on")
+    await client.send_json_auto_id({"type": "stations/get", "entry_id": entries["Rack"].entry_id})
+    msg = await client.receive_json()
+    assert msg["result"]["power"]["on"]["label_id"] == power_on.label_id
+
+
+async def test_batch_is_admin_only(
+    hass: HomeAssistant, setup_http, hass_ws_client, hass_admin_user
+) -> None:
+    """Only admins can create stations."""
+    assert await async_setup_component(hass, DOMAIN, {})
+    hass_admin_user.groups = []
+    client = await hass_ws_client(hass)
+    await client.send_json_auto_id(
+        {"type": "stations/create_batch", "stations": [{"name": "X"}], "dry_run": True}
+    )
+    msg = await client.receive_json()
+    assert msg["error"]["code"] == "unauthorized"

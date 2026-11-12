@@ -31,6 +31,7 @@ from homeassistant.helpers.dispatcher import (
     async_dispatcher_send,
 )
 
+from .batch import ws_create_batch
 from .const import (
     ALLOWED_CONTENT_TYPES,
     DOMAIN,
@@ -205,6 +206,7 @@ def async_register_api(hass: HomeAssistant) -> None:
         ws_set_device_display,
         ws_set_power,
         ws_power,
+        ws_create_batch,
     ):
         websocket_api.async_register_command(hass, command)
     hass.http.register_view(StationsFilesView())

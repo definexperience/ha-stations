@@ -49,3 +49,7 @@ SIGNAL_STATIONS_CHANGED = f"{DOMAIN}_changed"
 
 DEFAULT_LABEL_ICON = "stations:logo"
 DEFAULT_LABEL_COLOR = "indigo"
+
+# Labels made by the setup wizard are called "Station <name>" unless the user
+# types another name.
+LABEL_PREFIX = "Station "

@@ -138,6 +138,77 @@ const I18N = {
     station_settings: "Integration settings",
     not_found: "This station does not exist (anymore).",
     loading: "Loading…",
+    wz_title: "New stations",
+    wz_classic: "Single station dialog",
+    wz_not_admin: "Only administrators can create stations.",
+    wz_step_stations: "Stations",
+    wz_step_power: "Power",
+    wz_step_devices: "Devices",
+    wz_step_review: "Review",
+    wz_next: "Next",
+    wz_back: "Back",
+    wz_create: (n) => `Create ${n} station${n === 1 ? "" : "s"}`,
+    wz_creating: "Creating…",
+    wz_stations_help: "One row per station. Type the names, or paste rows from a spreadsheet (columns: name, area, label). Empty rows are skipped.",
+    wz_col_name: "Name",
+    wz_col_label: "Label",
+    wz_col_icon: "Icon",
+    wz_col_color: "Colour",
+    wz_col_area: "Area",
+    wz_name_ph: "e.g. Pump station A",
+    wz_new_label: "New label",
+    wz_label_ph: (name) => `Station ${name || "…"}`,
+    wz_label_in_use: (name) => `used by ${name}`,
+    wz_area_ph: "No area",
+    wz_area_new: "new area",
+    wz_add_row: "Add station",
+    wz_remove_row: "Remove row",
+    wz_pasted: (n) => `${n} row${n === 1 ? "" : "s"} pasted`,
+    wz_no_rows: "Enter at least one station name.",
+    wz_power_help: "Power on and Power off of every new station act on what carries the power labels. You can change this per station later.",
+    wz_power_default: "Use the default labels",
+    wz_power_default_hint: "Created when they don't exist yet.",
+    wz_power_choose: "Choose labels",
+    wz_power_none: "Don't use power labels",
+    wz_power_on_label: "Power on label",
+    wz_power_off_label: "Power off label",
+    wz_power_off_empty: "Not used (switch off what Power on switched on)",
+    wz_devices_help: "Choose the station for each device. Devices that are already in a station are greyed out at the bottom; you can still choose them.",
+    wz_all_areas: "All areas",
+    wz_suggest: "Suggest by area",
+    wz_suggested: (n) => `${n} device${n === 1 ? "" : "s"} suggested`,
+    wz_suggest_none: "No devices match the areas of the new stations.",
+    wz_no_station: "—",
+    wz_move: (name) => `Move from ${name}`,
+    wz_keep: (name) => `Also keep in ${name}`,
+    wz_in_station: (name) => `in ${name}`,
+    wz_hide_taken: "Hide devices in other stations",
+    wz_sep_taken: "Already in a station",
+    wz_no_devices: "No devices match.",
+    wz_count: (n) => `${n} device${n === 1 ? "" : "s"}`,
+    wz_review_help: "Nothing has been created yet. Check the list and press Create.",
+    wz_label_new: "new",
+    wz_label_existing: "existing",
+    wz_moves: (n, names) => `${n} moved from ${names}`,
+    wz_power_summary_default: "Power labels: Power on / Power off",
+    wz_power_summary_labels: (on, off) => `Power labels: ${on || "—"} / ${off || "—"}`,
+    wz_power_summary_none: "No power labels",
+    wz_power_create: (names) => `Creates the labels ${names}`,
+    wz_fix: "Some rows need attention. Go back to fix them.",
+    wz_done: (n) => `${n} station${n === 1 ? "" : "s"} created`,
+    wz_done_partly: "Some stations could not be created:",
+    wz_finish: "Go to stations",
+    wz_leave: "Leave the wizard? The stations you entered are not created.",
+    wz_err_name_required: "Enter a name.",
+    wz_err_name_duplicate: "This name is used twice.",
+    wz_err_name_exists: "A station with this name already exists.",
+    wz_err_label_in_use: (st) => `This label is already used by station ${st}.`,
+    wz_err_label_duplicate: "This label is used twice.",
+    wz_err_label_not_found: "This label no longer exists.",
+    wz_err_area_not_found: "This area no longer exists.",
+    wz_err_device_not_found: "A device no longer exists or is a station.",
+    wz_err_device_duplicate: "A device is chosen for two stations.",
+    wz_err_power_label_required: "Choose at least one power label.",
     template: `## Purpose
 What this station is for.
 
@@ -296,6 +367,77 @@ Where it stands and how to reach it.
     station_settings: "Integratie-instellingen",
     not_found: "Dit station bestaat niet (meer).",
     loading: "Laden…",
+    wz_title: "Nieuwe stations",
+    wz_classic: "Venster voor één station",
+    wz_not_admin: "Alleen beheerders kunnen stations aanmaken.",
+    wz_step_stations: "Stations",
+    wz_step_power: "Aan/uit",
+    wz_step_devices: "Apparaten",
+    wz_step_review: "Controleren",
+    wz_next: "Volgende",
+    wz_back: "Terug",
+    wz_create: (n) => `${n} station${n === 1 ? "" : "s"} aanmaken`,
+    wz_creating: "Bezig met aanmaken…",
+    wz_stations_help: "Eén rij per station. Typ de namen, of plak rijen uit een spreadsheet (kolommen: naam, ruimte, label). Lege rijen worden overgeslagen.",
+    wz_col_name: "Naam",
+    wz_col_label: "Label",
+    wz_col_icon: "Pictogram",
+    wz_col_color: "Kleur",
+    wz_col_area: "Ruimte",
+    wz_name_ph: "bijv. Pompstation A",
+    wz_new_label: "Nieuw label",
+    wz_label_ph: (name) => `Station ${name || "…"}`,
+    wz_label_in_use: (name) => `gebruikt door ${name}`,
+    wz_area_ph: "Geen ruimte",
+    wz_area_new: "nieuwe ruimte",
+    wz_add_row: "Station toevoegen",
+    wz_remove_row: "Rij verwijderen",
+    wz_pasted: (n) => `${n} rij${n === 1 ? "" : "en"} geplakt`,
+    wz_no_rows: "Vul minstens één stationsnaam in.",
+    wz_power_help: "Aanzetten en Uitzetten van elk nieuw station werken op wat de aan/uit-labels heeft. Je kunt dit later per station aanpassen.",
+    wz_power_default: "De standaardlabels gebruiken",
+    wz_power_default_hint: "Worden aangemaakt als ze nog niet bestaan.",
+    wz_power_choose: "Labels kiezen",
+    wz_power_none: "Geen aan/uit-labels gebruiken",
+    wz_power_on_label: "Label voor aanzetten",
+    wz_power_off_label: "Label voor uitzetten",
+    wz_power_off_empty: "Niet gebruikt (uitzetten wat Aanzetten aanzette)",
+    wz_devices_help: "Kies per apparaat het station. Apparaten die al in een station zitten staan grijs onderaan; je kunt ze toch kiezen.",
+    wz_all_areas: "Alle ruimtes",
+    wz_suggest: "Voorstel op ruimte",
+    wz_suggested: (n) => `${n} ${n === 1 ? "apparaat" : "apparaten"} voorgesteld`,
+    wz_suggest_none: "Geen apparaten in de ruimtes van de nieuwe stations.",
+    wz_no_station: "—",
+    wz_move: (name) => `Verplaatsen uit ${name}`,
+    wz_keep: (name) => `Ook in ${name} houden`,
+    wz_in_station: (name) => `in ${name}`,
+    wz_hide_taken: "Apparaten in andere stations verbergen",
+    wz_sep_taken: "Al in een station",
+    wz_no_devices: "Geen apparaten gevonden.",
+    wz_count: (n) => `${n} ${n === 1 ? "apparaat" : "apparaten"}`,
+    wz_review_help: "Er is nog niets aangemaakt. Controleer de lijst en klik op Aanmaken.",
+    wz_label_new: "nieuw",
+    wz_label_existing: "bestaand",
+    wz_moves: (n, names) => `${n} verplaatst uit ${names}`,
+    wz_power_summary_default: "Aan/uit-labels: Power on / Power off",
+    wz_power_summary_labels: (on, off) => `Aan/uit-labels: ${on || "—"} / ${off || "—"}`,
+    wz_power_summary_none: "Geen aan/uit-labels",
+    wz_power_create: (names) => `Maakt de labels ${names} aan`,
+    wz_fix: "Sommige rijen hebben aandacht nodig. Ga terug om ze aan te passen.",
+    wz_done: (n) => `${n} station${n === 1 ? "" : "s"} aangemaakt`,
+    wz_done_partly: "Sommige stations konden niet worden aangemaakt:",
+    wz_finish: "Naar de stations",
+    wz_leave: "De wizard verlaten? De ingevulde stations worden niet aangemaakt.",
+    wz_err_name_required: "Vul een naam in.",
+    wz_err_name_duplicate: "Deze naam komt twee keer voor.",
+    wz_err_name_exists: "Er bestaat al een station met deze naam.",
+    wz_err_label_in_use: (st) => `Dit label wordt al gebruikt door station ${st}.`,
+    wz_err_label_duplicate: "Dit label komt twee keer voor.",
+    wz_err_label_not_found: "Dit label bestaat niet meer.",
+    wz_err_area_not_found: "Deze ruimte bestaat niet meer.",
+    wz_err_device_not_found: "Een apparaat bestaat niet meer of is een station.",
+    wz_err_device_duplicate: "Een apparaat is voor twee stations gekozen.",
+    wz_err_power_label_required: "Kies minstens één aan/uit-label.",
     template: `## Doel
 Waar dit station voor is.
 
@@ -770,6 +912,90 @@ textarea.editor:focus { outline: 2px solid var(--primary-color); outline-offset:
 .lightbox .btn.text { color: #fff; }
 .lightbox .btn.danger { color: #ff8a80; }
 
+/* -------- setup wizard */
+.toolbar a.tb-link { color: inherit; font-size: 13px; opacity: .85; padding: 0 8px; white-space: nowrap; }
+.wz { max-width: 1180px; margin: 0 auto; }
+.wz-steps { display: flex; gap: 4px; margin-bottom: 16px; flex-wrap: wrap; }
+.wz-step { display: inline-flex; align-items: center; gap: 8px; height: 36px; padding: 0 14px 0 6px; border-radius: 18px; border: 0; background: none; font-size: 14px; color: var(--st-muted); cursor: default; }
+.wz-step .n { display: inline-flex; align-items: center; justify-content: center; width: 24px; height: 24px; border-radius: 50%; background: var(--st-chip); font-size: 12px; font-weight: 500; }
+.wz-step.active { color: var(--primary-text-color); font-weight: 500; }
+.wz-step.active .n { background: var(--primary-color); color: var(--text-primary-color, #fff); }
+.wz-step.done { cursor: pointer; color: var(--primary-text-color); }
+.wz-step.done:hover { background: var(--st-chip); }
+.wz-step.done .n { background: color-mix(in srgb, var(--primary-color) 20%, transparent); color: var(--primary-color); }
+.wz-help { margin: 0 0 12px; color: var(--st-muted); font-size: 14px; line-height: 1.45; }
+.wz-foot { display: flex; align-items: center; gap: 8px; padding: 12px 16px; border-top: 1px solid var(--st-line); flex-wrap: wrap; }
+.wz-foot .push { flex: 1; }
+.wz-foot .msg { font-size: 13px; color: var(--st-bad); }
+.wz-input, .wz-select { width: 100%; min-width: 0; height: 38px; padding: 0 10px; border-radius: 8px; border: 1px solid var(--st-line); background: var(--st-card); color: inherit; font: inherit; font-size: 14px; }
+.wz-input::placeholder { color: var(--st-muted); opacity: .8; }
+.wz-input:focus, .wz-select:focus { outline: 2px solid var(--primary-color); outline-offset: -1px; }
+.wz-input[disabled], .wz-select[disabled] { opacity: .6; }
+.wz-select option { color: var(--primary-text-color); background: var(--card-background-color); }
+.wz-head, .wz-row { display: grid; grid-template-columns: 24px minmax(150px, 1.3fr) minmax(170px, 1.4fr) minmax(130px, .9fr) 128px minmax(140px, 1fr) 36px; gap: 8px; align-items: start; }
+.wz-head { font-size: 12px; font-weight: 500; color: var(--st-muted); padding: 0 0 6px; }
+.wz-row { padding: 6px 0; border-top: 1px solid var(--st-line); }
+.wz-row .num { font-size: 12px; color: var(--st-muted); padding-top: 11px; text-align: right; }
+.wz-row .k { display: none; font-size: 11px; color: var(--st-muted); margin-bottom: 2px; }
+.wz-row .stack { display: flex; flex-direction: column; gap: 6px; min-width: 0; }
+.wz-row .with-icon { position: relative; }
+.wz-row .with-icon .wz-input { padding-left: 34px; }
+.wz-row .with-icon .lead { position: absolute; left: 9px; top: 9px; --mdc-icon-size: 20px; pointer-events: none; }
+.wz-row .swatch { position: absolute; left: 10px; top: 11px; width: 16px; height: 16px; border-radius: 50%; pointer-events: none; }
+.wz-row .with-icon .wz-select { padding-left: 34px; }
+.wz-row .tag { display: inline-block; margin-top: 4px; font-size: 11px; padding: 1px 8px; border-radius: 8px; background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
+.wz-row .tag[hidden] { display: none; }
+.wz-row .err { grid-column: 2 / -1; font-size: 12px; color: var(--st-bad); display: flex; flex-direction: column; gap: 2px; }
+.wz-row .bad { border-color: var(--st-bad); }
+.wz-row .icon-btn { width: 36px; height: 38px; border-radius: 8px; color: var(--st-muted); }
+.wz-add { margin-top: 8px; }
+@media (max-width: 900px) {
+  .wz-head { display: none; }
+  .wz-row { grid-template-columns: 1fr 1fr; padding: 12px 0; position: relative; }
+  .wz-row .num { position: absolute; left: 0; top: 12px; padding: 0; text-align: left; }
+  .wz-row .k { display: block; }
+  .wz-row > .c-name { grid-column: 1 / -1; padding-left: 24px; padding-right: 40px; }
+  .wz-row > .c-label, .wz-row > .c-area { grid-column: 1 / -1; }
+  .wz-row > .c-del { position: absolute; right: 0; top: 26px; }
+  .wz-row .err { grid-column: 1 / -1; }
+}
+.wz-radio { display: flex; align-items: flex-start; gap: 10px; padding: 10px 0; cursor: pointer; font-size: 14px; }
+.wz-radio input { margin: 2px 0 0; accent-color: var(--primary-color); width: 16px; height: 16px; }
+.wz-radio .muted { font-size: 12px; margin-top: 2px; }
+.wz-sub { margin: 4px 0 6px 26px; display: grid; grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); gap: 10px; max-width: 640px; }
+.wz-sub label { font-size: 12px; color: var(--st-muted); display: flex; flex-direction: column; gap: 4px; }
+.wz-chips { display: flex; flex-wrap: wrap; gap: 6px; margin-top: 6px; }
+.wz-bar { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; margin-bottom: 10px; }
+.wz-bar .search { flex: 1 1 260px; height: 40px; }
+.wz-bar .wz-select { width: auto; flex: 0 1 200px; height: 40px; border-radius: 20px; }
+.wz-check { display: inline-flex; align-items: center; gap: 6px; font-size: 13px; cursor: pointer; }
+.wz-check input { accent-color: var(--primary-color); }
+.wz-totals { display: flex; flex-wrap: wrap; gap: 6px; margin-bottom: 10px; }
+.wz-total { font-size: 12px; padding: 3px 10px; border-radius: 12px; background: var(--st-chip); }
+.wz-dev { display: grid; grid-template-columns: minmax(0, 1fr) minmax(150px, 220px); gap: 6px 12px; align-items: center; padding: 8px 0; border-top: 1px solid var(--st-line); }
+.wz-dev .d-name { font-weight: 500; overflow-wrap: anywhere; }
+.wz-dev .d-sub { font-size: 12px; color: var(--st-muted); overflow-wrap: anywhere; }
+.wz-dev .d-tag { display: inline-block; margin-left: 6px; font-size: 11px; font-weight: 400; padding: 1px 8px; border-radius: 10px; background: var(--st-chip); color: var(--st-muted); }
+.wz-dev.taken:not(.assigned) > div:first-child { opacity: .5; }
+.wz-dev.taken:not(.assigned) .wz-select { opacity: .7; }
+.wz-dev.assigned { background: color-mix(in srgb, var(--primary-color) 5%, transparent); }
+.wz-dev .d-move { grid-column: 1 / -1; display: flex; gap: 14px; flex-wrap: wrap; font-size: 13px; }
+.wz-dev .d-move label { display: inline-flex; gap: 6px; align-items: center; cursor: pointer; }
+.wz-dev .d-move input { accent-color: var(--primary-color); }
+.wz-sep { margin: 16px 0 4px; font-size: 12px; font-weight: 500; text-transform: uppercase; letter-spacing: .04em; color: var(--st-muted); }
+.wz-review { display: grid; grid-template-columns: repeat(auto-fill, minmax(260px, 1fr)); gap: 12px; }
+.wz-card { border: 1px solid var(--st-line); border-radius: 10px; padding: 12px 14px; display: flex; flex-direction: column; gap: 6px; font-size: 13px; }
+.wz-card .t { font-size: 15px; font-weight: 500; }
+.wz-card .r { display: flex; align-items: center; gap: 6px; flex-wrap: wrap; color: var(--st-muted); }
+.wz-card .r ha-icon { --mdc-icon-size: 16px; }
+.wz-card.bad { border-color: var(--st-bad); }
+.wz-card .e { color: var(--st-bad); }
+.wz-new { font-size: 10px; padding: 1px 6px; border-radius: 8px; background: color-mix(in srgb, var(--primary-color) 16%, transparent); color: var(--primary-color); }
+.wz-done { text-align: center; padding: 32px 16px; }
+.wz-done ha-icon.big { --mdc-icon-size: 56px; color: var(--st-ok); }
+.wz-done ul { list-style: none; padding: 0; margin: 16px auto; max-width: 480px; text-align: left; }
+.wz-done li { padding: 6px 0; border-top: 1px solid var(--st-line); display: flex; gap: 8px; align-items: center; }
+
 .loading { padding: 48px; text-align: center; color: var(--st-muted); }
 `;
 
@@ -804,7 +1030,7 @@ class StationsPanel extends HTMLElement {
     this._loadToken = 0;
     this._useHaMarkdown = false;
     this._onBeforeUnload = (e) => {
-      if (this._isDirty()) {
+      if (this._isDirty() || this._wzDirty()) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -836,8 +1062,12 @@ class StationsPanel extends HTMLElement {
   set route(route) {
     this._route = route;
     const id = (route?.path || "").replace(/^\//, "").split("/")[0];
-    const next = id ? { name: "detail", id } : { name: "list" };
+    const next = id === "new" ? { name: "wizard" } : id ? { name: "detail", id } : { name: "list" };
     if (this._view && this._view.name === next.name && this._view.id === next.id) return;
+    if (this._view?.name === "wizard" && this._wzDirty() && !confirm(this.t("wz_leave"))) {
+      history.replaceState(null, "", `/${this._panelPath()}/new`);
+      return;
+    }
     if (this._isDirty() && this._view && !confirm(this.t("unsaved"))) {
       // Put the old URL back.
       history.replaceState(null, "", `/${this._panelPath()}${this._view.id ? `/${this._view.id}` : ""}`);
@@ -845,6 +1075,8 @@ class StationsPanel extends HTMLElement {
     }
     this._view = next;
     this._resetDetailState();
+    if (next.name === "wizard") this._wzStart();
+    else this._wizard = null;
     this._maybeStart();
   }
   set panel(panel) {
@@ -900,6 +1132,9 @@ class StationsPanel extends HTMLElement {
       this.shadowRoot.addEventListener("change", (e) => this._handleChange(e));
       // "error" doesn't bubble, so listen in the capture phase for failed images.
       this.shadowRoot.addEventListener("error", (e) => this._imageFailed(e.target), true);
+      this.shadowRoot.addEventListener("paste", (e) => {
+        if (this._wizard && e.target?.dataset?.wz) this._wzPaste(e, e.target);
+      });
       this.shadowRoot.addEventListener("dragover", (e) => this._handleDrag(e, true));
       this.shadowRoot.addEventListener("dragleave", (e) => this._handleDrag(e, false));
       this.shadowRoot.addEventListener("drop", (e) => this._handleDrop(e));
@@ -936,7 +1171,14 @@ class StationsPanel extends HTMLElement {
     const token = ++this._loadToken;
     const view = this._view;
     try {
-      if (view.name === "list") {
+      if (view.name === "wizard") {
+        // Load once; later change events must not reset what was typed.
+        if (this._wizard && !this._wizard.loaded) {
+          await this._wzLoad();
+          if (token !== this._loadToken || !this._wizard) return;
+          this._wizard.loaded = true;
+        } else return;
+      } else if (view.name === "list") {
         const list = await this._ws("stations/list");
         if (token !== this._loadToken) return;
         this._list = list;
@@ -955,7 +1197,7 @@ class StationsPanel extends HTMLElement {
   }
 
   _onRemoteChange(msg) {
-    if (!this._view) return;
+    if (!this._view || this._view.name === "wizard") return;
     if (this._view.name === "detail" && msg.entry_id && msg.entry_id !== this._view.id) return;
     clearTimeout(this._reloadTimer);
     this._reloadTimer = setTimeout(async () => {
@@ -1057,7 +1299,10 @@ class StationsPanel extends HTMLElement {
       this._refreshDetail(root);
       return;
     }
-    if (this._view.name === "list") root.innerHTML = this._listTemplate();
+    if (this._view.name === "wizard") {
+      if (!this._wizard) this._wzStart();
+      root.innerHTML = this._wizardTemplate();
+    } else if (this._view.name === "list") root.innerHTML = this._listTemplate();
     else root.innerHTML = this._detailTemplate();
     const menu = this.shadowRoot.querySelector("ha-menu-button");
     if (menu) {
@@ -1844,6 +2089,561 @@ class StationsPanel extends HTMLElement {
     });
   }
 
+  /* --- setup wizard: several stations at once
+   *
+   * Four steps: stations (table), power labels, devices, review. Nothing is
+   * created until "Create": the review step asks the server for a dry run,
+   * which reports per row what would be created and what is wrong.
+   */
+  _wzNewRow(values = {}) {
+    return { key: ++this._wzSeq, name: "", labelId: "", labelName: "", labelIcon: "", labelColor: "indigo", area: "", ...values };
+  }
+
+  _wzStart() {
+    this._wzSeq = 0;
+    this._wizard = {
+      step: 0,
+      rows: [this._wzNewRow(), this._wzNewRow(), this._wzNewRow()],
+      power: { mode: "default", on: "", off: "" },
+      assign: {}, // device id -> { row: key, move: true }
+      query: "",
+      area: "",
+      hideTaken: false,
+      errors: [],
+      plan: null,
+      busy: false,
+      result: null,
+      labels: [],
+      stations: [],
+    };
+  }
+
+  async _wzLoad() {
+    const [labels, list] = await Promise.all([this._ws("config/label_registry/list"), this._ws("stations/list")]);
+    if (!this._wizard) return;
+    this._wizard.labels = labels.sort((a, b) => a.name.localeCompare(b.name));
+    this._wizard.stations = list.stations;
+    this._wizard.isAdmin = list.is_admin;
+  }
+
+  _wzDirty() {
+    const w = this._wizard;
+    return Boolean(w && !w.result && w.rows.some((r) => r.name.trim()));
+  }
+
+  _wzRows() {
+    return this._wizard.rows.filter((r) => r.name.trim() || r.labelName.trim() || r.labelId || r.area.trim());
+  }
+
+  _wzAreaByName(name) {
+    const n = name.trim().toLowerCase();
+    if (!n) return null;
+    return Object.values(this._hass.areas || {}).find((a) => a.name.toLowerCase() === n) || null;
+  }
+
+  _wzStationOfLabel() {
+    return new Map(this._wizard.stations.map((s) => [s.label_id, s.name]));
+  }
+
+  _wzPayload(withDevices) {
+    const w = this._wizard;
+    const rows = this._wzRows();
+    const stations = rows.map((r) => {
+      const st = { name: r.name.trim() };
+      if (r.labelId) st.label_id = r.labelId;
+      else {
+        if (r.labelName.trim()) st.label_name = r.labelName.trim();
+        if (r.labelIcon.trim()) st.label_icon = r.labelIcon.trim();
+        st.label_color = r.labelColor;
+      }
+      const area = this._wzAreaByName(r.area);
+      if (area) st.area_id = area.area_id;
+      else if (r.area.trim()) st.area_name = r.area.trim();
+      st.devices = withDevices
+        ? Object.entries(w.assign)
+            .filter(([, a]) => a.row === r.key)
+            .map(([device_id, a]) => ({ device_id, move: a.move }))
+        : [];
+      return st;
+    });
+    const p = w.power;
+    const power = p.mode === "labels" ? { mode: "labels", on: p.on || null, off: p.off || null } : { mode: p.mode };
+    return { rows, stations, power };
+  }
+
+  async _wzCheck(withDevices) {
+    const w = this._wizard;
+    const { rows, stations, power } = this._wzPayload(withDevices);
+    const result = await this._ws("stations/create_batch", { stations, power, dry_run: true });
+    // Errors come back by position in the payload; map them to wizard rows.
+    w.errors = result.errors.map((e) => ({ ...e, key: e.row === null ? null : rows[e.row]?.key }));
+    w.plan = result;
+    return result;
+  }
+
+  _wzErrorText(e) {
+    const key = `wz_err_${e.code}`;
+    return e.code === "label_in_use" ? this.t(key, e.station) : this.t(key);
+  }
+
+  async _wzGo(step) {
+    const w = this._wizard;
+    if (w.busy) return;
+    if (step > w.step && w.step === 0) {
+      if (!this._wzRows().length) {
+        w.message = this.t("wz_no_rows");
+        this._render();
+        return;
+      }
+      w.busy = true;
+      try {
+        await this._wzCheck(false);
+      } catch (err) {
+        this._toast(err?.message || String(err));
+      }
+      w.busy = false;
+      // Power and device problems are checked later; stop for row problems.
+      if (w.errors.some((e) => e.key !== null && e.field !== "devices")) {
+        this._render();
+        return;
+      }
+    }
+    if (step > w.step && w.step === 1 && w.power.mode === "labels" && !w.power.on && !w.power.off) {
+      w.message = this.t("wz_err_power_label_required");
+      this._render();
+      return;
+    }
+    if (step === 3) {
+      w.busy = true;
+      try {
+        await this._wzCheck(true);
+      } catch (err) {
+        this._toast(err?.message || String(err));
+      }
+      w.busy = false;
+    }
+    // Drop assignments to rows that were removed or emptied.
+    const keys = new Set(this._wzRows().map((r) => r.key));
+    for (const [id, a] of Object.entries(w.assign)) if (!keys.has(a.row)) delete w.assign[id];
+    w.message = "";
+    w.step = step;
+    this._render();
+    window.scrollTo?.(0, 0);
+  }
+
+  async _wzCreate() {
+    const w = this._wizard;
+    if (w.busy) return;
+    w.busy = true;
+    this._render();
+    try {
+      const { rows, stations, power } = this._wzPayload(true);
+      const result = await this._ws("stations/create_batch", { stations, power });
+      if (!result.created) {
+        w.errors = result.errors.map((e) => ({ ...e, key: e.row === null ? null : rows[e.row]?.key }));
+        w.plan = result;
+      } else {
+        w.result = result;
+      }
+    } catch (err) {
+      this._toast(err?.message || String(err));
+    }
+    w.busy = false;
+    this._render();
+  }
+
+  _wzPaste(e, input) {
+    const text = e.clipboardData?.getData("text/plain") || "";
+    if (!/[\t\n]/.test(text.trim())) return;
+    e.preventDefault();
+    const w = this._wizard;
+    let lines = text.replace(/\r\n?/g, "\n").split("\n").filter((l) => l.trim());
+    if (lines.length && /^(name|naam|station)s?$/i.test(lines[0].split("\t")[0].trim())) lines = lines.slice(1);
+    let index = w.rows.findIndex((r) => String(r.key) === input.dataset.row);
+    if (index < 0) index = w.rows.length;
+    for (const line of lines) {
+      const [name = "", area = "", label = ""] = line.split("\t").map((c) => c.trim());
+      const values = { name, area };
+      if (label) {
+        const existing = w.labels.find((l) => l.name.toLowerCase() === label.toLowerCase());
+        if (existing) values.labelId = existing.label_id;
+        else values.labelName = label;
+      }
+      if (index < w.rows.length) Object.assign(w.rows[index], values);
+      else w.rows.push(this._wzNewRow(values));
+      index++;
+    }
+    if (w.rows[w.rows.length - 1].name.trim()) w.rows.push(this._wzNewRow());
+    w.errors = [];
+    this._render();
+    this._toast(this.t("wz_pasted", lines.length));
+  }
+
+  _wzSuggest() {
+    const w = this._wizard;
+    const byArea = new Map();
+    for (const r of this._wzRows()) {
+      const area = this._wzAreaByName(r.area);
+      if (!area) continue;
+      // An area with two new stations is ambiguous: suggest nothing there.
+      byArea.set(area.area_id, byArea.has(area.area_id) ? null : r.key);
+    }
+    let n = 0;
+    for (const { dev, taken } of this._wzDevices()) {
+      const key = byArea.get(dev.area_id);
+      if (!key || taken.length || w.assign[dev.id]) continue;
+      w.assign[dev.id] = { row: key, move: true };
+      n++;
+    }
+    this._render();
+    this._toast(n ? this.t("wz_suggested", n) : this.t("wz_suggest_none"));
+  }
+
+  _wzDevices() {
+    const w = this._wizard;
+    const stationDevices = new Set(w.stations.map((s) => s.device_id));
+    const ofLabel = this._wzStationOfLabel();
+    return Object.values(this._hass.devices || {})
+      .filter((dev) => !stationDevices.has(dev.id) && dev.entry_type !== "service")
+      .map((dev) => ({
+        dev,
+        name: dev.name_by_user || dev.name || dev.id,
+        taken: (dev.labels || []).filter((l) => ofLabel.has(l)).map((l) => ofLabel.get(l)),
+      }));
+  }
+
+  _wizardTemplate() {
+    const w = this._wizard;
+    const back = `<button class="icon-btn" data-action="back" title="${esc(this.t("back"))}" aria-label="${esc(this.t("back"))}"><ha-icon icon="mdi:arrow-left"></ha-icon></button>`;
+    const classic = `<a class="tb-link" href="/config/integrations/dashboard/add?domain=stations" data-action="nav">${esc(this.t("wz_classic"))}</a>`;
+    const toolbar = `<div class="toolbar">${back}<div class="title">${esc(this.t("wz_title"))}</div>${classic}</div>`;
+    if (!w.loaded) return `${toolbar}<div class="loading">${esc(this.t("loading"))}</div>`;
+    if (!w.isAdmin) return `${toolbar}<div class="content"><div class="card empty">${esc(this.t("wz_not_admin"))}</div></div>`;
+    if (w.result) return `${toolbar}<div class="content"><div class="wz">${this._wzDoneTemplate()}</div></div>`;
+    const names = ["wz_step_stations", "wz_step_power", "wz_step_devices", "wz_step_review"];
+    const steps = names
+      .map((k, i) => {
+        const cls = i === w.step ? "active" : i < w.step ? "done" : "";
+        return `<button class="wz-step ${cls}" ${i < w.step ? `data-action="wz-go" data-step="${i}"` : "disabled"}><span class="n">${i < w.step ? '<ha-icon icon="mdi:check" style="--mdc-icon-size:14px"></ha-icon>' : i + 1}</span>${esc(this.t(k))}</button>`;
+      })
+      .join("");
+    const body = [this._wzStationsTemplate, this._wzPowerTemplate, this._wzDevicesTemplate, this._wzReviewTemplate][w.step].call(this);
+    const count = this._wzRows().length;
+    const next =
+      w.step < 3
+        ? `<button class="btn" data-action="wz-go" data-step="${w.step + 1}" ${w.busy ? "disabled" : ""}>${esc(this.t("wz_next"))}<ha-icon icon="mdi:arrow-right"></ha-icon></button>`
+        : `<button class="btn" data-action="wz-create" ${w.busy || w.plan?.errors.length ? "disabled" : ""}><ha-icon icon="mdi:check"></ha-icon>${esc(w.busy ? this.t("wz_creating") : this.t("wz_create", count))}</button>`;
+    const prev = w.step > 0 ? `<button class="btn text" data-action="wz-go" data-step="${w.step - 1}">${esc(this.t("wz_back"))}</button>` : "";
+    return `${toolbar}
+      <div class="content"><div class="wz">
+        <div class="wz-steps">${steps}</div>
+        <div class="card">
+          <div class="card-body" style="padding-top:16px">${body}</div>
+          <div class="wz-foot">${prev}<span class="push"></span>${w.message ? `<span class="msg">${esc(w.message)}</span>` : ""}${next}</div>
+        </div>
+      </div></div>`;
+  }
+
+  _wzStationsTemplate() {
+    const w = this._wizard;
+    const ofLabel = this._wzStationOfLabel();
+    const areas = Object.values(this._hass.areas || {}).sort((a, b) => a.name.localeCompare(b.name));
+    const colors = Object.keys(LABEL_COLORS);
+    const rows = w.rows
+      .map((r, i) => {
+        const errs = w.errors.filter((e) => e.key === r.key && e.field !== "devices");
+        const bad = (f) => (errs.some((e) => e.field === f) ? "bad" : "");
+        const label = r.labelId ? w.labels.find((l) => l.label_id === r.labelId) : null;
+        const icon = label ? label.icon || "mdi:label" : r.labelIcon.trim() || "stations:logo";
+        const color = labelColor(label ? label.color : r.labelColor);
+        const labelOptions = w.labels
+          .map((l) => {
+            const used = ofLabel.get(l.label_id);
+            return `<option value="${esc(l.label_id)}" ${l.label_id === r.labelId ? "selected" : ""} ${used ? "disabled" : ""}>${esc(l.name)}${used ? ` (${esc(this.t("wz_label_in_use", used))})` : ""}</option>`;
+          })
+          .join("");
+        const isNewArea = r.area.trim() && !this._wzAreaByName(r.area);
+        return `
+          <div class="wz-row" data-row-key="${r.key}">
+            <div class="num">${i + 1}</div>
+            <div class="c-name"><div class="k">${esc(this.t("wz_col_name"))}</div><input class="wz-input ${bad("name")}" data-wz="name" data-row="${r.key}" value="${esc(r.name)}" placeholder="${esc(i === 0 ? this.t("wz_name_ph") : "")}" autocomplete="off"></div>
+            <div class="c-label stack"><div class="k">${esc(this.t("wz_col_label"))}</div>
+              <select class="wz-select ${bad("label")}" data-wz="labelId" data-row="${r.key}"><option value="">${esc(this.t("wz_new_label"))}</option>${labelOptions}</select>
+              ${r.labelId ? "" : `<input class="wz-input ${bad("label")}" data-wz="labelName" data-row="${r.key}" value="${esc(r.labelName)}" placeholder="${esc(this.t("wz_label_ph", r.name.trim()))}" autocomplete="off">`}
+            </div>
+            <div class="c-icon"><div class="k">${esc(this.t("wz_col_icon"))}</div><div class="with-icon"><ha-icon class="lead" icon="${esc(icon)}" style="color:${color}" data-wz-preview="${r.key}"></ha-icon><input class="wz-input" data-wz="labelIcon" data-row="${r.key}" value="${esc(label ? label.icon || "" : r.labelIcon)}" placeholder="stations:logo" autocomplete="off" ${label ? "disabled" : ""}></div></div>
+            <div class="c-color"><div class="k">${esc(this.t("wz_col_color"))}</div><div class="with-icon"><span class="swatch" style="background:${color}"></span><select class="wz-select" data-wz="labelColor" data-row="${r.key}" ${label ? "disabled" : ""}>${colors
+              .map((c) => `<option value="${c}" ${(label ? label.color : r.labelColor) === c ? "selected" : ""}>${esc(c)}</option>`)
+              .join("")}</select></div></div>
+            <div class="c-area"><div class="k">${esc(this.t("wz_col_area"))}</div><div class="with-icon"><ha-icon class="lead" icon="mdi:map-marker-outline" style="color:var(--st-muted)"></ha-icon><input class="wz-input ${bad("area")}" data-wz="area" data-row="${r.key}" list="wz-areas" value="${esc(r.area)}" placeholder="${esc(this.t("wz_area_ph"))}" autocomplete="off"></div><span class="tag" data-wz-newarea="${r.key}" ${isNewArea ? "" : "hidden"}>${esc(this.t("wz_area_new"))}</span></div>
+            <div class="c-del"><button class="icon-btn" data-action="wz-del-row" data-row="${r.key}" title="${esc(this.t("wz_remove_row"))}" aria-label="${esc(this.t("wz_remove_row"))}"><ha-icon icon="mdi:close"></ha-icon></button></div>
+            ${errs.length ? `<div class="err">${errs.map((e) => `<span>${esc(this._wzErrorText(e))}</span>`).join("")}</div>` : ""}
+          </div>`;
+      })
+      .join("");
+    return `
+      <p class="wz-help">${esc(this.t("wz_stations_help"))}</p>
+      <datalist id="wz-areas">${areas.map((a) => `<option value="${esc(a.name)}"></option>`).join("")}</datalist>
+      <div class="wz-head"><span></span><span>${esc(this.t("wz_col_name"))}</span><span>${esc(this.t("wz_col_label"))}</span><span>${esc(this.t("wz_col_icon"))}</span><span>${esc(this.t("wz_col_color"))}</span><span>${esc(this.t("wz_col_area"))}</span><span></span></div>
+      ${rows}
+      <button class="btn text wz-add" data-action="wz-add-row"><ha-icon icon="mdi:plus"></ha-icon>${esc(this.t("wz_add_row"))}</button>`;
+  }
+
+  _wzPowerTemplate() {
+    const p = this._wizard.power;
+    const labels = this._wizard.labels;
+    const radio = (mode, title, hint = "", extra = "") => `
+      <label class="wz-radio"><input type="radio" name="wz-power" data-wz-power value="${mode}" ${p.mode === mode ? "checked" : ""}><span><span>${esc(title)}</span>${hint ? `<div class="muted">${hint}</div>` : ""}</span></label>${extra}`;
+    const chip = (name, color) => `<span class="label-chip" style="background:${labelColor(color)}"><ha-icon icon="mdi:power"></ha-icon>${esc(name)}</span>`;
+    const select = (which, empty) => `<select class="wz-select" data-wz-power-label="${which}"><option value="">${esc(empty)}</option>${labels
+      .map((l) => `<option value="${esc(l.label_id)}" ${p[which] === l.label_id ? "selected" : ""}>${esc(l.name)}</option>`)
+      .join("")}</select>`;
+    const choose =
+      p.mode === "labels"
+        ? `<div class="wz-sub"><label>${esc(this.t("wz_power_on_label"))}${select("on", "—")}</label><label>${esc(this.t("wz_power_off_label"))}${select("off", this.t("wz_power_off_empty"))}</label></div>`
+        : "";
+    return `
+      <p class="wz-help">${esc(this.t("wz_power_help"))}</p>
+      ${radio("default", this.t("wz_power_default"), `<span class="wz-chips">${chip("Power on", "green")}${chip("Power off", "red")}</span><div style="margin-top:4px">${esc(this.t("wz_power_default_hint"))}</div>`)}
+      ${radio("labels", this.t("wz_power_choose"), "", choose)}
+      ${radio("none", this.t("wz_power_none"))}`;
+  }
+
+  _wzDevicesTemplate() {
+    const w = this._wizard;
+    const areas = Object.values(this._hass.areas || {}).sort((a, b) => a.name.localeCompare(b.name));
+    const rows = this._wzRows();
+    const totals = rows
+      .map((r) => {
+        const n = Object.values(w.assign).filter((a) => a.row === r.key).length;
+        return `<span class="wz-total"><b>${esc(r.name.trim())}</b> · ${esc(this.t("wz_count", n))}</span>`;
+      })
+      .join("");
+    return `
+      <p class="wz-help">${esc(this.t("wz_devices_help"))}</p>
+      <div class="wz-bar">
+        <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="wz-dev-search" type="search" placeholder="${esc(this.t("search_devices"))}" value="${esc(w.query)}" autocomplete="off"></label>
+        <select class="wz-select" id="wz-dev-area"><option value="">${esc(this.t("wz_all_areas"))}</option>${areas
+          .map((a) => `<option value="${esc(a.area_id)}" ${w.area === a.area_id ? "selected" : ""}>${esc(a.name)}</option>`)
+          .join("")}<option value="-" ${w.area === "-" ? "selected" : ""}>${esc(this.t("no_area"))}</option></select>
+        <button class="btn outline" data-action="wz-suggest"><ha-icon icon="mdi:auto-fix"></ha-icon>${esc(this.t("wz_suggest"))}</button>
+      </div>
+      <div class="wz-totals" id="wz-totals">${totals}</div>
+      <label class="wz-check" style="margin-bottom:6px"><input type="checkbox" id="wz-hide-taken" ${w.hideTaken ? "checked" : ""}>${esc(this.t("wz_hide_taken"))}</label>
+      <div id="wz-devlist">${this._wzDeviceList()}</div>`;
+  }
+
+  _wzDeviceList() {
+    const w = this._wizard;
+    const q = w.query.trim().toLowerCase();
+    const areaName = (id) => (id && this._hass.areas?.[id]?.name) || "";
+    const rows = this._wzRows();
+    const list = this._wzDevices()
+      .filter(({ dev }) => !w.area || (w.area === "-" ? !dev.area_id : dev.area_id === w.area))
+      .filter(({ dev, name }) => !q || [name, dev.manufacturer, dev.model, areaName(dev.area_id)].some((v) => v && v.toLowerCase().includes(q)))
+      .filter(({ dev, taken }) => !w.hideTaken || !taken.length || w.assign[dev.id])
+      .sort((a, b) => a.name.localeCompare(b.name));
+    const free = list.filter((x) => !x.taken.length);
+    const taken = list.filter((x) => x.taken.length);
+    const row = ({ dev, name, taken: other }) => {
+      const a = w.assign[dev.id];
+      const sub = [dev.manufacturer, dev.model, areaName(dev.area_id)].filter(Boolean).join(" · ");
+      const options = rows.map((r) => `<option value="${r.key}" ${a?.row === r.key ? "selected" : ""}>${esc(r.name.trim())}</option>`).join("");
+      const names = other.join(", ");
+      const move =
+        a && other.length
+          ? `<div class="d-move"><label><input type="radio" name="mv-${esc(dev.id)}" data-wz-move="${esc(dev.id)}" value="1" ${a.move ? "checked" : ""}>${esc(this.t("wz_move", names))}</label><label><input type="radio" name="mv-${esc(dev.id)}" data-wz-move="${esc(dev.id)}" value="0" ${a.move ? "" : "checked"}>${esc(this.t("wz_keep", names))}</label></div>`
+          : "";
+      return `
+        <div class="wz-dev ${other.length ? "taken" : ""} ${a ? "assigned" : ""}">
+          <div><div class="d-name">${esc(name)}${other.length ? `<span class="d-tag">${esc(this.t("wz_in_station", names))}</span>` : ""}</div>${sub ? `<div class="d-sub">${esc(sub)}</div>` : ""}</div>
+          <select class="wz-select" data-wz-assign="${esc(dev.id)}"><option value="">${esc(this.t("wz_no_station"))}</option>${options}</select>
+          ${move}
+        </div>`;
+    };
+    if (!list.length) return `<div class="muted small" style="padding:12px 0">${esc(this.t("wz_no_devices"))}</div>`;
+    return `${free.map(row).join("")}${taken.length ? `<div class="wz-sep">${esc(this.t("wz_sep_taken"))}</div>${taken.map(row).join("")}` : ""}`;
+  }
+
+  _wzReviewTemplate() {
+    const w = this._wizard;
+    const plan = w.plan;
+    if (!plan) return `<div class="loading">${esc(this.t("loading"))}</div>`;
+    const rows = this._wzRows();
+    const devName = (id) => this._deviceName(id);
+    const general = plan.errors.filter((e) => e.key === null);
+    const cards = plan.stations
+      .map((st, i) => {
+        const errs = plan.errors.filter((e) => e.key === rows[i]?.key);
+        const label = `<span class="label-chip" style="background:${labelColor(st.label_color)}"><ha-icon icon="${esc(st.label_icon || "stations:logo")}"></ha-icon>${esc(st.label_name)}</span>${st.label_created ? `<span class="wz-new">${esc(this.t("wz_label_new"))}</span>` : ""}`;
+        const areaName = st.area_name || (st.area_id && this._hass.areas?.[st.area_id]?.name) || "";
+        const moves = Object.entries(st.moves || {});
+        const movedFrom = [...new Set(moves.flatMap(([, names]) => names))].join(", ");
+        return `
+          <div class="wz-card ${errs.length ? "bad" : ""}">
+            <div class="t">${esc(st.name || "—")}</div>
+            <div class="r">${label}</div>
+            ${areaName ? `<div class="r"><ha-icon icon="mdi:map-marker-outline"></ha-icon>${esc(areaName)}${st.area_created ? `<span class="wz-new">${esc(this.t("wz_area_new"))}</span>` : ""}</div>` : ""}
+            <div class="r" title="${esc(st.devices.map(devName).join(", "))}"><ha-icon icon="mdi:devices"></ha-icon>${esc(this.t("wz_count", st.devices.length))}${moves.length ? ` · ${esc(this.t("wz_moves", moves.length, movedFrom))}` : ""}</div>
+            ${errs.map((e) => `<div class="e">${esc(this._wzErrorText(e))}</div>`).join("")}
+          </div>`;
+      })
+      .join("");
+    const p = w.power;
+    const labelName = (id) => w.labels.find((l) => l.label_id === id)?.name;
+    const power =
+      p.mode === "default" ? this.t("wz_power_summary_default") : p.mode === "labels" ? this.t("wz_power_summary_labels", labelName(p.on), labelName(p.off)) : this.t("wz_power_summary_none");
+    const creates = plan.power_labels_created.length ? ` · ${this.t("wz_power_create", plan.power_labels_created.join(", "))}` : "";
+    return `
+      <p class="wz-help">${esc(plan.errors.length ? this.t("wz_fix") : this.t("wz_review_help"))}</p>
+      ${general.map((e) => `<div class="banner bad">${esc(this._wzErrorText(e))}</div>`).join("")}
+      <div class="wz-review">${cards}</div>
+      <p class="muted small" style="margin:14px 0 0;display:flex;align-items:center;gap:6px"><ha-icon icon="mdi:power" style="--mdc-icon-size:16px"></ha-icon>${esc(power + creates)}</p>`;
+  }
+
+  _wzDoneTemplate() {
+    const r = this._wizard.result;
+    const ok = r.stations.filter((s) => s.entry_id);
+    const failed = r.stations.filter((s) => !s.entry_id);
+    return `
+      <div class="card wz-done">
+        <ha-icon class="big" icon="mdi:check-circle"></ha-icon>
+        <h2 style="margin:8px 0 0;font-weight:500">${esc(this.t("wz_done", ok.length))}</h2>
+        <ul>${ok
+          .map(
+            (s) =>
+              `<li><span class="label-chip" style="background:${labelColor(s.label_color)}"><ha-icon icon="${esc(s.label_icon || "stations:logo")}"></ha-icon>${esc(s.label_name)}</span><a href="/${this._panelPath()}/${esc(s.entry_id)}" data-action="nav">${esc(s.name)}</a><span class="muted small" style="margin-left:auto">${esc(this.t("wz_count", s.devices.length))}</span></li>`
+          )
+          .join("")}</ul>
+        ${failed.length ? `<p class="muted">${esc(this.t("wz_done_partly"))} ${esc(failed.map((s) => s.name).join(", "))}</p>` : ""}
+        <button class="btn" data-action="wz-finish">${esc(this.t("wz_finish"))}</button>
+      </div>`;
+  }
+
+  _wzInput(t) {
+    const w = this._wizard;
+    if (t.id === "wz-dev-search") {
+      w.query = t.value;
+      const list = this.shadowRoot.getElementById("wz-devlist");
+      if (list) list.innerHTML = this._wzDeviceList();
+      return true;
+    }
+    const field = t.dataset?.wz;
+    if (!field) return false;
+    const row = w.rows.find((r) => String(r.key) === t.dataset.row);
+    if (!row) return true;
+    row[field] = t.value;
+    w.message = "";
+    const el = this.shadowRoot.querySelector(`[data-row-key="${row.key}"]`);
+    if (field === "name") {
+      el?.querySelector('[data-wz="labelName"]')?.setAttribute("placeholder", this.t("wz_label_ph", t.value.trim()));
+      // Typing in the last row adds a fresh empty row below it.
+      if (t.value.trim() && w.rows[w.rows.length - 1] === row) {
+        w.rows.push(this._wzNewRow());
+        const focus = t.selectionStart;
+        this._render();
+        const again = this.shadowRoot.querySelector(`[data-row-key="${row.key}"] [data-wz="name"]`);
+        again?.focus();
+        again?.setSelectionRange(focus, focus);
+      }
+    } else if (field === "labelIcon") {
+      el?.querySelector("[data-wz-preview]")?.setAttribute("icon", t.value.trim() || "stations:logo");
+    } else if (field === "area") {
+      const tag = el?.querySelector("[data-wz-newarea]");
+      if (tag) tag.hidden = !(t.value.trim() && !this._wzAreaByName(t.value));
+    }
+    return true;
+  }
+
+  _wzChange(t) {
+    const w = this._wizard;
+    if (t.dataset?.wz === "labelId" || t.dataset?.wz === "labelColor") {
+      const row = w.rows.find((r) => String(r.key) === t.dataset.row);
+      if (row) row[t.dataset.wz] = t.value;
+      w.errors = w.errors.filter((e) => e.key !== row?.key || e.field !== "label");
+      this._render();
+      return true;
+    }
+    if (t.dataset?.wz) return true; // text fields: handled on input
+    if (t.dataset?.wzPower !== undefined && t.name === "wz-power") {
+      w.power.mode = t.value;
+      w.message = "";
+      if (t.value === "labels" && !w.power.on && !w.power.off) {
+        w.power.on = w.labels.find((l) => /power[ _-]?on|aan/i.test(l.name))?.label_id || "";
+        w.power.off = w.labels.find((l) => /power[ _-]?off|uit/i.test(l.name))?.label_id || "";
+      }
+      this._render();
+      return true;
+    }
+    if (t.dataset?.wzPowerLabel) {
+      w.power[t.dataset.wzPowerLabel] = t.value;
+      w.message = "";
+      return true;
+    }
+    if (t.dataset?.wzAssign) {
+      const id = t.dataset.wzAssign;
+      if (t.value) w.assign[id] = { row: Number(t.value), move: w.assign[id]?.move ?? true };
+      else delete w.assign[id];
+      this._wzRefreshDevices();
+      return true;
+    }
+    if (t.dataset?.wzMove) {
+      const a = w.assign[t.dataset.wzMove];
+      if (a) a.move = t.value === "1";
+      return true;
+    }
+    if (t.id === "wz-dev-area") {
+      w.area = t.value;
+      this._wzRefreshDevices();
+      return true;
+    }
+    if (t.id === "wz-hide-taken") {
+      w.hideTaken = t.checked;
+      this._wzRefreshDevices();
+      return true;
+    }
+    return false;
+  }
+
+  _wzRefreshDevices() {
+    const list = this.shadowRoot.getElementById("wz-devlist");
+    if (list) list.innerHTML = this._wzDeviceList();
+    const totals = this.shadowRoot.getElementById("wz-totals");
+    if (totals) totals.outerHTML = this._wzDevicesTemplate().match(/<div class="wz-totals" id="wz-totals">[\s\S]*?<\/div>/)[0];
+  }
+
+  async _wzClick(action, el) {
+    const w = this._wizard;
+    switch (action) {
+      case "wz-go":
+        await this._wzGo(Number(el.dataset.step));
+        return true;
+      case "wz-add-row":
+        w.rows.push(this._wzNewRow());
+        this._render();
+        this.shadowRoot.querySelector(`[data-row-key="${w.rows[w.rows.length - 1].key}"] [data-wz="name"]`)?.focus();
+        return true;
+      case "wz-del-row": {
+        w.rows = w.rows.filter((r) => String(r.key) !== el.dataset.row);
+        if (!w.rows.length) w.rows.push(this._wzNewRow());
+        this._render();
+        return true;
+      }
+      case "wz-suggest":
+        this._wzSuggest();
+        return true;
+      case "wz-create":
+        await this._wzCreate();
+        return true;
+      case "wz-finish":
+        this._wizard = null;
+        this._navigate(`/${this._panelPath()}`);
+        return true;
+      default:
+        return false;
+    }
+  }
+
   /* --- events */
   _handleKey(e) {
     if (this._lightbox) {
@@ -1860,6 +2660,7 @@ class StationsPanel extends HTMLElement {
 
   _handleInput(e) {
     const t = e.target;
+    if (this._wizard && this._wzInput(t)) return;
     if (t.id === "search") {
       this._search = t.value;
       this._refocusSearch = true;
@@ -1881,6 +2682,7 @@ class StationsPanel extends HTMLElement {
 
   _handleChange(e) {
     const t = e.target;
+    if (this._wizard && this._wzChange(t)) return;
     if (t.id === "sort") {
       this._sort = t.value;
       try {
@@ -1960,6 +2762,7 @@ class StationsPanel extends HTMLElement {
     }
     const action = el.dataset.action;
     const d = this._detail;
+    if (this._wizard && action.startsWith("wz-") && (await this._wzClick(action, el))) return;
     switch (action) {
       case "img-retry":
         // Inside a station card (a link) or a gallery tile: retry only.
@@ -1981,7 +2784,7 @@ class StationsPanel extends HTMLElement {
         this._navigate(el.getAttribute("href"));
         break;
       case "add-station":
-        this._navigate("/config/integrations/dashboard/add?domain=stations");
+        this._navigate(`/${this._panelPath()}/new`);
         break;
       case "settings":
         this._navigate("/config/integrations/integration/stations");

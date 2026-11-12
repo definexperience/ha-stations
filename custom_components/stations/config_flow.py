@@ -186,6 +186,25 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders={"station": self._name},
         )
 
+    async def async_step_import(self, import_data: dict[str, Any]) -> ConfigFlowResult:
+        """Create a station from the setup wizard in the panel.
+
+        The wizard has already created the label and area and checked the
+        input, so the station is created straight away.
+        """
+        label_id = import_data[CONF_LABEL_ID]
+        await self.async_set_unique_id(label_id)
+        self._abort_if_unique_id_configured()
+        data: dict[str, Any] = {CONF_LABEL_ID: label_id}
+        if area_id := import_data.get(CONF_AREA_ID):
+            data[CONF_AREA_ID] = area_id
+        power_on = import_data.get(CONF_POWER_ON_LABEL)
+        power_off = import_data.get(CONF_POWER_OFF_LABEL)
+        if power_on or power_off:
+            data[CONF_POWER_ON_LABEL] = power_on
+            data[CONF_POWER_OFF_LABEL] = power_off
+        return self.async_create_entry(title=import_data[CONF_NAME], data=data)
+
     def _default_label(self, name: str, icon: str, color: str) -> str:
         return _label_for_name(self.hass, name, icon, color)
 
