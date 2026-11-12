@@ -1022,7 +1022,7 @@ textarea.editor:focus { outline: 2px solid var(--primary-color); outline-offset:
 .wz-chip ha-icon { --mdc-icon-size: 13px; }
 .wz-chip button { border: 0; background: none; color: var(--st-muted); cursor: pointer; padding: 0 5px; font-size: 14px; line-height: 1; border-radius: 8px; }
 .wz-chip button:hover { color: var(--primary-text-color); background: rgba(127,127,127,.2); }
-.wz-divider { height: 1px; background: var(--st-line); margin: 18px 0 14px; }
+.wz-foot.wz-mid { margin: 14px -16px 14px; border-bottom: 1px solid var(--st-line); }
 .wz-item { border-top: 1px solid var(--st-line); }
 .wz-item.nested { border-top: 0; }
 .wz-line { display: flex; align-items: center; gap: 10px; padding: 8px 6px; cursor: pointer; border-radius: 6px; }
@@ -2354,20 +2354,25 @@ class StationsPanel extends HTMLElement {
       })
       .join("");
     const body = [this._wzStationsTemplate, this._wzPowerTemplate, this._wzDevicesTemplate, this._wzReviewTemplate][w.step].call(this);
+    return `${toolbar}
+      <div class="content"><div class="wz">
+        <div class="wz-steps">${steps}</div>
+        <div class="card">
+          <div class="card-body" style="padding-top:16px">${body}</div>
+          <div class="wz-foot">${this._wzNavTemplate()}</div>
+        </div>
+      </div></div>`;
+  }
+
+  _wzNavTemplate() {
+    const w = this._wizard;
     const count = this._wzRows().length;
     const next =
       w.step < 3
         ? `<button class="btn" data-action="wz-go" data-step="${w.step + 1}" ${w.busy ? "disabled" : ""}>${esc(this.t("wz_next"))}<ha-icon icon="mdi:arrow-right"></ha-icon></button>`
         : `<button class="btn" data-action="wz-create" ${w.busy || w.plan?.errors.length ? "disabled" : ""}><ha-icon icon="mdi:check"></ha-icon>${esc(w.busy ? this.t("wz_creating") : this.t("wz_create", count))}</button>`;
     const prev = w.step > 0 ? `<button class="btn text" data-action="wz-go" data-step="${w.step - 1}">${esc(this.t("wz_back"))}</button>` : "";
-    return `${toolbar}
-      <div class="content"><div class="wz">
-        <div class="wz-steps">${steps}</div>
-        <div class="card">
-          <div class="card-body" style="padding-top:16px">${body}</div>
-          <div class="wz-foot">${prev}<span class="push"></span>${w.message ? `<span class="msg">${esc(w.message)}</span>` : ""}${next}</div>
-        </div>
-      </div></div>`;
+    return `${prev}<span class="push"></span>${w.message ? `<span class="msg">${esc(w.message)}</span>` : ""}${next}`;
   }
 
   _wzStationsTemplate() {
@@ -2526,7 +2531,7 @@ class StationsPanel extends HTMLElement {
     return `
       <p class="wz-help">${esc(this.t("wz_devices_help"))}</p>
       <div class="wz-tiles" id="wz-tiles">${this._wzTilesTemplate()}</div>
-      <div class="wz-divider"></div>
+      <div class="wz-foot wz-mid">${this._wzNavTemplate()}</div>
       <div class="wz-bar">
         <label class="search"><ha-icon icon="mdi:magnify"></ha-icon><input id="wz-dev-search" type="search" placeholder="${esc(this.t("wz_search_items"))}" value="${esc(w.query)}" autocomplete="off"></label>
         <select class="wz-select" id="wz-dev-area"><option value="">${esc(this.t("wz_all_areas"))}</option>${areas
