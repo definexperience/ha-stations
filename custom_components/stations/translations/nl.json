@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "Nieuw station",
-        "description": "Een station bundelt de apparaten die in één meubel zijn ingebouwd. Elk apparaat of elke entiteit met het label van het station hoort bij het station. Laat het label leeg om een nieuw label met de naam van het station aan te maken.",
+        "description": "Een station bundelt de apparaten die in één meubel zijn ingebouwd. Elk apparaat of elke entiteit met het label van het station hoort bij het station. Laat het label leeg om een nieuw label \"Station <naam>\" aan te maken.",
         "data": {
           "name": "Naam",
           "label_id": "Label",

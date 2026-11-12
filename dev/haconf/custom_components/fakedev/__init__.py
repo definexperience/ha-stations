@@ -10,6 +10,13 @@ DEVICES = [
   ("UPS", "APC", "Back-UPS 700", [("sensor","load","Load","unavailable","%",None,None),("sensor","runtime","Runtime","unavailable","min",None,None)]),
   ("Label printer", "Brother", "QL-820NWB", [("sensor","status","Status","idle",None,"mdi:printer",None)]),
   ("Shelly Plug S", "Shelly", "SNPL-00112EU", [("switch","plug","Plug","off",None,None,None),("sensor","p","Power","0.0","W",None,None)]),
+  # Not in a station yet: used to try the setup wizard
+  ("Pump controller B", "Shelly", "Pro 4PM", [("switch","relay","Relay","off",None,None,None),("sensor","power","Power","0.0","W",None,None)]),
+  ("Pressure sensor", "IFM", "PN7092", [("sensor","bar","Pressure","3.2","bar","mdi:gauge",None)]),
+  ("Compressor relay", "Shelly", "Pro 1PM", [("switch","relay","Relay","on",None,None,None)]),
+  ("Access point", "Ubiquiti", "U6-Lite", [("sensor","clients","Clients","12",None,"mdi:wifi",None)]),
+  ("Patch panel PDU", "APC", "AP7920", [("switch","outlet","Outlet 1","on",None,None,None)]),
+  ("Bench light", "IKEA", "TRADFRI", [("switch","light","Light","off",None,None,None)]),
 ]
 from homeassistant.config_entries import SOURCE_IMPORT
 async def async_setup(hass, config):

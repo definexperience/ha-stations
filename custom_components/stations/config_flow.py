@@ -28,11 +28,17 @@ from .const import (
     DEFAULT_POWER_OFF_LABEL,
     DEFAULT_POWER_ON_LABEL,
     DOMAIN,
+    LABEL_PREFIX,
     POWER_OFF_LABEL_COLOR,
     POWER_OFF_LABEL_ICON,
     POWER_ON_LABEL_COLOR,
     POWER_ON_LABEL_ICON,
 )
+
+
+def default_label_name(name: str) -> str:
+    """Label name for a station when the user leaves the label empty."""
+    return f"{LABEL_PREFIX}{name}"
 
 
 def _label_for_name(
@@ -102,7 +108,7 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
                 errors[CONF_LABEL_ID] = "label_in_use"
                 placeholders["station"] = other.title
             elif not label_id and (
-                (existing := _existing_label_id(self.hass, name))
+                (existing := _existing_label_id(self.hass, default_label_name(name)))
                 and (other := _station_using_label(self.hass, existing))
             ):
                 errors[CONF_NAME] = "name_label_in_use"
@@ -186,6 +192,25 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
             description_placeholders={"station": self._name},
         )
 
+    async def async_step_import(self, import_data: dict[str, Any]) -> ConfigFlowResult:
+        """Create a station from the setup wizard in the panel.
+
+        The wizard has already created the label and area and checked the
+        input, so the station is created straight away.
+        """
+        label_id = import_data[CONF_LABEL_ID]
+        await self.async_set_unique_id(label_id)
+        self._abort_if_unique_id_configured()
+        data: dict[str, Any] = {CONF_LABEL_ID: label_id}
+        if area_id := import_data.get(CONF_AREA_ID):
+            data[CONF_AREA_ID] = area_id
+        power_on = import_data.get(CONF_POWER_ON_LABEL)
+        power_off = import_data.get(CONF_POWER_OFF_LABEL)
+        if power_on or power_off:
+            data[CONF_POWER_ON_LABEL] = power_on
+            data[CONF_POWER_OFF_LABEL] = power_off
+        return self.async_create_entry(title=import_data[CONF_NAME], data=data)
+
     def _default_label(self, name: str, icon: str, color: str) -> str:
         return _label_for_name(self.hass, name, icon, color)
 
@@ -193,7 +218,7 @@ class StationsConfigFlow(ConfigFlow, domain=DOMAIN):
         self, power_on_label: str | None, power_off_label: str | None
     ) -> ConfigFlowResult:
         """Create the station label if needed, then the station."""
-        label_id = self._label_id or _label_for_name(self.hass, self._name)
+        label_id = self._label_id or _label_for_name(self.hass, default_label_name(self._name))
         await self.async_set_unique_id(label_id)
         self._abort_if_unique_id_configured()
         data: dict[str, Any] = {CONF_LABEL_ID: label_id}
