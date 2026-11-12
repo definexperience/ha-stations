@@ -27,6 +27,7 @@ from homeassistant.helpers import (
     label_registry as lr,
 )
 
+from .config_flow import default_label_name
 from .const import (
     CONF_AREA_ID,
     CONF_LABEL_ID,
@@ -37,7 +38,6 @@ from .const import (
     DEFAULT_POWER_OFF_LABEL,
     DEFAULT_POWER_ON_LABEL,
     DOMAIN,
-    LABEL_PREFIX,
     POWER_OFF_LABEL_COLOR,
     POWER_OFF_LABEL_ICON,
     POWER_ON_LABEL_COLOR,
@@ -98,11 +98,6 @@ class _Row:
     area_name: str | None = None  # new area (when area_id is None)
     devices: list[dict[str, Any]] = field(default_factory=list)
     moves: dict[str, list[str]] = field(default_factory=dict)  # device -> station names
-
-
-def default_label_name(name: str) -> str:
-    """Label name for a station when the user leaves it empty."""
-    return f"{LABEL_PREFIX}{name}"
 
 
 def _station_labels(hass: HomeAssistant) -> dict[str, str]:

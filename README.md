@@ -61,7 +61,7 @@ You can add a device to a station in three ways. They all do the same thing:
 2. On the device's own page in Home Assistant, add the station's label.
 3. In Settings → Devices & services → Devices, select several devices and apply the label in one go.
 
-Changes show up immediately. A device can be in more than one station if it carries more than one station label. When you create a station without choosing a label, a label with the station's name is created for you.
+Changes show up immediately. A device can be in more than one station if it carries more than one station label. When you create a station without choosing a label, a label called "Station <name>" is created for you.
 
 ## Installation
 
@@ -89,7 +89,7 @@ HACS shows an update whenever a new release is published. HACS only works with p
 
 ![Setup wizard](docs/setup-wizard.png)
 
-**One at a time.** Go to **Settings → Devices & services → Add integration** and search for **Stations** (or use **Single station dialog** at the top of the wizard). Enter a name, optionally pick an existing label and the area where the station stands, and check the power on / power off labels. A label that another station already uses is refused with the name of that station.
+**One at a time.** Go to **Settings → Devices & services → Add integration** and search for **Stations** (or use **Single station dialog** at the top of the wizard). Enter a name, optionally pick an existing label (empty creates "Station <name>") and the area where the station stands, and check the power on / power off labels. A label that another station already uses is refused with the name of that station.
 
 ## Who can do what
 

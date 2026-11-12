@@ -106,7 +106,7 @@ async def test_flow_creates_label_device_and_entities(hass: HomeAssistant, setup
     entry = await _create_station(hass, "Desk A", area_id=area.id)
 
     label = lr.async_get(hass).async_get_label(entry.data["label_id"])
-    assert label is not None and label.name == "Desk A"
+    assert label is not None and label.name == "Station Desk A"
     assert entry.unique_id == label.label_id
     assert "area_id" not in entry.data  # applied once, then dropped
 
@@ -951,6 +951,7 @@ async def test_batch_dry_run_reports_problems(
         (1, "name_duplicate"),
         (2, "name_required"),
         (3, "name_exists"),
+        (3, "label_in_use"),  # "Station Desk A" belongs to Desk A
         (4, "label_in_use"),
         (6, "label_duplicate"),
         (7, "area_not_found"),

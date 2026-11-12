@@ -3,7 +3,7 @@
     "step": {
       "user": {
         "title": "New station",
-        "description": "A station groups the devices that are built into one piece of furniture. Every device or entity that carries the station's label is part of the station. Leave the label empty to create a new label with the station's name.",
+        "description": "A station groups the devices that are built into one piece of furniture. Every device or entity that carries the station's label is part of the station. Leave the label empty to create a new label called \"Station <name>\".",
         "data": {
           "name": "Name",
           "label_id": "Label",

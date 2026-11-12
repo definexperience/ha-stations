@@ -64,7 +64,7 @@ async def main():
         devs = {d["name"]: d["id"] for d in await call(type="config/device_registry/list")}
         labels = {l["name"]: l["label_id"] for l in await call(type="config/label_registry/list")}
         def assign(dev, st):
-            return call(type="config/device_registry/update", device_id=devs[dev], labels=[labels[st]])
+            return call(type="config/device_registry/update", device_id=devs[dev], labels=[labels["Station " + st]])
         for d in ("Pump controller", "Flow sensor", "Cabinet climate", "Door contact"): await assign(d, "Pump station A")
         for d in ("Network switch", "UPS"): await assign(d, "Network cabinet")
         for d in ("Label printer", "Shelly Plug S"): await assign(d, "Workbench 1")
