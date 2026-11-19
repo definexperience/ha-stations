@@ -656,6 +656,13 @@ async def test_chunked_upload(hass: HomeAssistant, setup_http, hass_client) -> N
     assert store.file_path(entry.entry_id, record).read_bytes() == data
     assert not list(api.uploads_dir(hass).iterdir())  # temporary file gone
 
+    # Finishing again (the answer got lost and the panel retries) returns the
+    # same file and does not add it twice.
+    resp = await client.post(f"{base}/{upload_id}")
+    assert resp.status == HTTPStatus.OK, await resp.text()
+    assert (await resp.json())["id"] == file_id
+    assert len(store.get(entry.entry_id)["files"]) == 1
+
     # The upload is finished: further pieces are refused.
     resp = await client.put(f"{base}/{upload_id}?offset=0", data=b"x")
     assert resp.status == HTTPStatus.NOT_FOUND

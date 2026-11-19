@@ -94,14 +94,23 @@ const I18N = {
     unsaved: "You have unsaved documentation changes. Leave anyway?",
     upload: "Upload",
     drop_here: "Drop photos or files here",
-    uploading: (name) => `Uploading ${name}…`,
     upload_failed: (name, why) => `Upload of ${name} failed: ${why}`,
-    uploading_pct: (name, pct) => `Uploading ${name}… ${pct}%`,
     upload_summary: (ok, total, why) => `${ok} of ${total} files uploaded. ${why}`,
-    err_connection: (name) => `Connection lost while uploading ${name}. Try again.`,
     err_signed_out: "You're no longer signed in. Reload the page.",
     err_too_large: (name, mb) => `${name} is larger than ${mb} MB`,
     err_wrong_type: (name) => `${name} can't be added: only photos (JPEG, PNG, GIF, WebP), PDF and plain text files are allowed`,
+    up_preparing: "Preparing…",
+    up_queued: "Waiting to upload",
+    up_uploading: "Uploading…",
+    up_uploading_pct: (pct) => `Uploading… ${pct}%`,
+    up_retrying: (s) => `Connection lost. Trying again in ${s} s`,
+    up_offline: "Offline. Continues when the connection is back.",
+    up_retry_now: "Try now",
+    up_elsewhere: "Uploading in another tab",
+    up_paused: "Paused: sign in again",
+    up_cancel: "Cancel upload",
+    up_lost: (name) => `${name} couldn't be resumed. Add it again.`,
+    up_resuming: (n) => (n === 1 ? "Continuing 1 unfinished upload" : `Continuing ${n} unfinished uploads`),
     no_files: "No photos or files yet. Upload photos of the station, wiring diagrams or datasheets.",
     caption: "Caption",
     set_cover: "Use as cover",
@@ -328,14 +337,23 @@ Where it stands and how to reach it.
     unsaved: "Je hebt niet-opgeslagen wijzigingen. Toch verlaten?",
     upload: "Uploaden",
     drop_here: "Sleep foto's of bestanden hierheen",
-    uploading: (name) => `${name} uploaden…`,
     upload_failed: (name, why) => `Uploaden van ${name} mislukt: ${why}`,
-    uploading_pct: (name, pct) => `${name} uploaden… ${pct}%`,
     upload_summary: (ok, total, why) => `${ok} van ${total} bestanden geüpload. ${why}`,
-    err_connection: (name) => `Verbinding verbroken tijdens het uploaden van ${name}. Probeer het opnieuw.`,
     err_signed_out: "Je bent niet meer ingelogd. Laad de pagina opnieuw.",
     err_too_large: (name, mb) => `${name} is groter dan ${mb} MB`,
     err_wrong_type: (name) => `${name} kan niet worden toegevoegd: alleen foto's (JPEG, PNG, GIF, WebP), PDF en tekstbestanden`,
+    up_preparing: "Voorbereiden…",
+    up_queued: "Wacht op uploaden",
+    up_uploading: "Uploaden…",
+    up_uploading_pct: (pct) => `Uploaden… ${pct}%`,
+    up_retrying: (s) => `Verbinding verbroken. Opnieuw over ${s} s`,
+    up_offline: "Offline. Gaat verder zodra er weer verbinding is.",
+    up_retry_now: "Nu proberen",
+    up_elsewhere: "Wordt geüpload in een ander tabblad",
+    up_paused: "Gepauzeerd: log opnieuw in",
+    up_cancel: "Upload annuleren",
+    up_lost: (name) => `${name} kon niet worden hervat. Voeg het opnieuw toe.`,
+    up_resuming: (n) => (n === 1 ? "1 onafgemaakte upload gaat verder" : `${n} onafgemaakte uploads gaan verder`),
     no_files: "Nog geen foto's of bestanden. Upload foto's van het station, aansluitschema's of datasheets.",
     caption: "Bijschrift",
     set_cover: "Als omslagfoto",
@@ -901,7 +919,17 @@ textarea.editor:focus { outline: 2px solid var(--primary-color); outline-offset:
 .tile .cap { position: absolute; left: 0; right: 0; bottom: 0; padding: 18px 8px 6px; font-size: 12px; color: #fff; text-align: left; background: linear-gradient(transparent, rgba(0,0,0,.65)); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
 .tile .star { position: absolute; top: 6px; left: 6px; background: rgba(0,0,0,.5); color: #ffd54f; border-radius: 50%; width: 24px; height: 24px; display: flex; align-items: center; justify-content: center; }
 .tile .star ha-icon { --mdc-icon-size: 15px; }
-.tile.pending { display: flex; align-items: center; justify-content: center; font-size: 12px; color: var(--st-muted); cursor: default; padding: 8px; text-align: center; }
+.tile.pending { display: flex; flex-direction: column; align-items: center; justify-content: center; gap: 6px; font-size: 12px; color: var(--st-muted); cursor: default; padding: 8px 10px; text-align: center; overflow: hidden; }
+.tile.pending .up-name { display: flex; align-items: center; gap: 6px; max-width: calc(100% - 28px); color: var(--primary-text-color); font-weight: 500; }
+.tile.pending .up-name > span { white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+.tile.pending .up-name ha-icon { --mdc-icon-size: 20px; flex: none; color: var(--st-muted); }
+.tile.pending .up-status { line-height: 1.3; }
+.tile.pending .up-bar { width: 80%; height: 4px; border-radius: 2px; background: var(--st-line); overflow: hidden; flex: none; }
+.tile.pending .up-bar > span { display: block; height: 100%; background: var(--primary-color); transition: width .3s; }
+.tile.pending[data-status="retrying"] .up-name ha-icon, .tile.pending[data-status="retrying"] .up-status, .tile.pending[data-status="paused"] .up-name ha-icon { color: var(--warning-color, #ff9800); }
+.tile.pending .up-retry { font-size: 12px; height: 26px; padding: 0 10px; }
+.tile.pending .up-cancel { position: absolute; top: 2px; right: 2px; width: 30px; height: 30px; color: var(--st-muted); }
+.tile.pending .up-cancel ha-icon { --mdc-icon-size: 18px; }
 .dropzone { position: absolute; inset: 0; border: 2px dashed var(--primary-color); border-radius: var(--st-radius); background: color-mix(in srgb, var(--primary-color) 10%, var(--st-card)); display: none; align-items: center; justify-content: center; font-weight: 500; color: var(--primary-color); z-index: 2; }
 .files.dragging .dropzone { display: flex; }
 
@@ -1055,6 +1083,470 @@ textarea.editor:focus { outline: 2px solid var(--primary-color); outline-offset:
 `;
 
 /* ------------------------------------------------------------------ panel */
+const translate = (lang, key, ...args) => {
+  const dict = I18N[lang] || I18N.en;
+  const value = dict[key] ?? I18N.en[key] ?? key;
+  return typeof value === "function" ? value(...args) : value;
+};
+
+/* ------------------------------------------------------------ upload queue
+ * Files waiting to be uploaded are kept in this browser's IndexedDB, so an
+ * upload survives going to another page, the phone putting the app to sleep,
+ * a dropped connection and a reload (F5). Files are sent one at a time, in
+ * pieces (see api.py). A dropped connection or a server error (5xx) is retried
+ * with growing pauses and never given up on; a refused file (wrong type, too
+ * large) is dropped with a message. One queue per browser tab, shared by
+ * every Stations panel on the page; Web Locks keep two tabs from sending the
+ * same file.
+ */
+const UPLOAD_DB = "stations-uploads";
+const RETRY_DELAYS = [2, 4, 8, 15, 30, 60]; // seconds; then every 60 s
+const REQUEST_TIMEOUT_MS = 120000; // a stalled connection counts as dropped
+const MAX_RESTARTS = 3; // the server forgot the upload (HA restarted, expired)
+
+class RetryableError extends Error {}
+class SignedOutError extends Error {}
+
+/** IndexedDB with two stores: items (what to upload) and blobs (the file). */
+class UploadStore {
+  _open() {
+    if (!this._opening) {
+      this._opening = new Promise((resolve) => {
+        try {
+          const req = indexedDB.open(UPLOAD_DB, 1);
+          req.onupgradeneeded = () => {
+            req.result.createObjectStore("items", { keyPath: "id" });
+            req.result.createObjectStore("blobs");
+          };
+          req.onsuccess = () => resolve(req.result);
+          req.onerror = req.onblocked = () => resolve(null);
+        } catch (e) {
+          resolve(null); // private mode, or storage blocked
+        }
+      });
+    }
+    return this._opening;
+  }
+
+  /** Run fn(tx) in a transaction; resolves { ok, result } when it is committed. */
+  async _tx(mode, fn) {
+    const db = await this._open();
+    if (!db) return { ok: false };
+    return new Promise((resolve) => {
+      try {
+        const tx = db.transaction(["items", "blobs"], mode);
+        const req = fn(tx);
+        tx.oncomplete = () => resolve({ ok: true, result: req?.result });
+        tx.onerror = tx.onabort = () => resolve({ ok: false });
+      } catch (e) {
+        resolve({ ok: false });
+      }
+    });
+  }
+
+  async items() {
+    return (await this._tx("readonly", (tx) => tx.objectStore("items").getAll())).result || [];
+  }
+  async blob(id) {
+    return (await this._tx("readonly", (tx) => tx.objectStore("blobs").get(id))).result || null;
+  }
+  async add(item, blob) {
+    return (
+      await this._tx("readwrite", (tx) => {
+        tx.objectStore("blobs").put(blob, item.id);
+        tx.objectStore("items").put(item);
+      })
+    ).ok;
+  }
+  put(item) {
+    return this._tx("readwrite", (tx) => tx.objectStore("items").put(item));
+  }
+  remove(id) {
+    return this._tx("readwrite", (tx) => {
+      tx.objectStore("items").delete(id);
+      tx.objectStore("blobs").delete(id);
+    });
+  }
+}
+
+const SAVED_FIELDS = ["id", "user", "entryId", "name", "type", "size", "created", "uploadId", "chunk", "offset", "restarts"];
+
+class UploadQueue {
+  constructor() {
+    this.store = new UploadStore();
+    this.items = []; // saved fields + status, pct, retryAt, blob, ...
+    this._listeners = new Set();
+    this._hass = null;
+    this._lang = "en";
+    this._loaded = null;
+    this._running = false;
+    this._seq = 0;
+    this._gone = new Set(); // finished or cancelled here; a read that raced the delete must not bring them back
+    window.addEventListener("online", () => this.retryNow());
+    document.addEventListener("visibilitychange", () => {
+      if (!document.hidden) {
+        this.refresh();
+        this.retryNow();
+      }
+    });
+  }
+
+  t(key, ...args) {
+    return translate(this._lang, key, ...args);
+  }
+
+  setHass(hass) {
+    this._hass = hass;
+    this._lang = (hass.locale?.language || hass.language || "en").toLowerCase().startsWith("nl") ? "nl" : "en";
+    if (!this._loaded) this._loaded = this._loadSaved();
+    else if (this._paused && hass.auth?.data?.access_token !== this._pausedToken) {
+      // Signed in again (new token): carry on.
+      this._paused = false;
+      for (const it of this.items) if (it.status === "paused") it.status = "queued";
+      this._run();
+    }
+  }
+
+  subscribe(fn) {
+    this._listeners.add(fn);
+    return () => this._listeners.delete(fn);
+  }
+
+  _emit(type = "change", data = {}) {
+    for (const fn of this._listeners) {
+      try {
+        fn({ type, ...data });
+      } catch (e) {
+        /* a listener's problem is not the queue's */
+      }
+    }
+    const waiting = this.items.some((i) => i.status === "retrying");
+    if (waiting && !this._ticker) this._ticker = setInterval(() => this._emit("tick"), 1000);
+    else if (!waiting && this._ticker) {
+      clearInterval(this._ticker);
+      this._ticker = null;
+    }
+  }
+
+  _toast(message) {
+    // The panel may be gone (another page): show it through Home Assistant itself.
+    const target = document.querySelector("home-assistant") || window;
+    target.dispatchEvent(new CustomEvent("hass-notification", { detail: { message }, bubbles: true, composed: true }));
+  }
+
+  _user() {
+    return this._hass?.user?.id || null;
+  }
+
+  _fromSaved(saved) {
+    return { ...saved, status: "queued", pct: this._pctOf(saved), saved: true };
+  }
+
+  _pctOf(it) {
+    return it.size ? Math.min(99, Math.round(((it.offset || 0) / it.size) * 100)) : 0;
+  }
+
+  async _loadSaved() {
+    const user = this._user();
+    const saved = (await this.store.items()).filter((i) => i.user === user).sort((a, b) => a.created - b.created);
+    for (const s of saved) if (!this.items.some((i) => i.id === s.id)) this.items.push(this._fromSaved(s));
+    if (saved.length) this._toast(this.t("up_resuming", saved.length));
+    this._emit();
+    this._run();
+  }
+
+  /** Pick up what another tab added or finished. */
+  async refresh() {
+    if (!this._loaded) return;
+    await this._loaded;
+    const saved = await this.store.items();
+    if (!saved.length && !this.items.some((i) => i.saved)) return;
+    const ids = new Set(saved.map((s) => s.id));
+    const before = this.items.length;
+    // Gone from the store: finished or cancelled in another tab.
+    this.items = this.items.filter((i) => !i.saved || ids.has(i.id) || i.active);
+    const user = this._user();
+    for (const s of saved.sort((a, b) => a.created - b.created)) {
+      if (s.user === user && !this._gone.has(s.id) && !this.items.some((i) => i.id === s.id)) this.items.push(this._fromSaved(s));
+    }
+    let changed = this.items.length !== before;
+    for (const it of this.items) {
+      if (it.status === "elsewhere") {
+        it.status = "queued"; // that tab may be closed now; the lock tells
+        changed = true;
+      }
+    }
+    if (changed) this._emit();
+    this._run();
+  }
+
+  forEntry(entryId) {
+    return this.items.filter((i) => i.entryId === entryId);
+  }
+
+  /** True when something is waiting that a reload would lose. */
+  hasUnsaved() {
+    return this.items.some((i) => !i.saved && i.status !== "elsewhere");
+  }
+
+  /**
+   * Queue files for a station. prepare(file) may shrink a photo; check(file)
+   * throws UploadError for a file that can't be uploaded. Returns the messages
+   * of files that were refused.
+   */
+  async add(entryId, files, prepare, check) {
+    await this._loaded;
+    const now = Date.now();
+    const fresh = files.map((f, n) => ({
+      id: `${now.toString(36)}-${(++this._seq).toString(36)}-${Math.random().toString(36).slice(2, 8)}`,
+      user: this._user(),
+      entryId,
+      name: f.name,
+      type: f.type,
+      size: f.size,
+      created: now + n,
+      uploadId: null,
+      chunk: 0,
+      offset: 0,
+      restarts: 0,
+      status: "preparing",
+      pct: 0,
+    }));
+    this.items.push(...fresh);
+    this._emit();
+    const refused = [];
+    for (const [n, it] of fresh.entries()) {
+      try {
+        const file = await prepare(files[n]);
+        check(file);
+        Object.assign(it, { name: file.name, type: file.type, size: file.size, blob: file });
+        it.saved = await this.store.add(this._savedPart(it), file);
+        if (it.status === "preparing") it.status = "queued";
+      } catch (err) {
+        refused.push(err instanceof UploadError ? err.message : this.t("upload_failed", files[n].name, err?.message || String(err)));
+        this._drop(it);
+      }
+      this._emit();
+      this._run();
+    }
+    return refused;
+  }
+
+  _savedPart(it) {
+    return Object.fromEntries(SAVED_FIELDS.map((k) => [k, it[k] ?? null]));
+  }
+
+  _save(it) {
+    if (it.saved) this.store.put(this._savedPart(it));
+  }
+
+  _drop(it) {
+    this._gone.add(it.id);
+    this.items = this.items.filter((i) => i !== it);
+    this.store.remove(it.id);
+  }
+
+  cancel(id) {
+    const it = this.items.find((i) => i.id === id);
+    if (!it) return;
+    it.status = "cancelled";
+    it.abort?.abort();
+    it.wake?.();
+    this._drop(it);
+    if (it.uploadId) this._request(`/api/stations/${it.entryId}/uploads/${it.uploadId}`, { method: "DELETE" }).catch(() => {});
+    this._emit();
+  }
+
+  /** Skip the pause before the next try (button, back online, app visible again). */
+  retryNow(id) {
+    for (const it of this.items) if (!id || it.id === id) it.wake?.();
+  }
+
+  async _run() {
+    if (this._running || this._paused || !this._hass) return;
+    this._running = true;
+    try {
+      for (;;) {
+        const it = this.items.find((i) => i.status === "queued");
+        if (!it) break;
+        await this._withLock(it, () => this._process(it));
+      }
+    } finally {
+      this._running = false;
+    }
+    if (this.items.some((i) => i.status === "elsewhere")) {
+      clearTimeout(this._elsewhereTimer);
+      this._elsewhereTimer = setTimeout(() => this.refresh(), 15000);
+    }
+  }
+
+  async _withLock(it, fn) {
+    if (!navigator.locks?.request) return fn();
+    return navigator.locks.request(`stations-upload-${it.id}`, { ifAvailable: true }, async (lock) => {
+      if (!lock) {
+        // Another tab of this browser is sending it.
+        it.status = "elsewhere";
+        this._emit();
+        return;
+      }
+      await fn();
+    });
+  }
+
+  async _process(it) {
+    it.active = true;
+    it.status = "uploading";
+    this._emit();
+    try {
+      const blob = it.blob || (it.blob = await this.store.blob(it.id));
+      if (!blob) throw new UploadError(this.t("up_lost", it.name));
+      for (let attempt = 0; it.status !== "cancelled"; ) {
+        try {
+          if (await this._step(it, blob)) {
+            this._drop(it);
+            this._emit("done", { entryId: it.entryId });
+            this._emit();
+            return;
+          }
+          attempt = 0; // it moved on
+        } catch (err) {
+          if (it.status === "cancelled") return;
+          if (!(err instanceof RetryableError)) throw err;
+          await this._pause(it, attempt++);
+        }
+      }
+    } catch (err) {
+      if (it.status === "cancelled") return;
+      if (err instanceof SignedOutError) {
+        // Keep everything; carry on once signed in again.
+        this._paused = true;
+        this._pausedToken = this._hass.auth?.data?.access_token;
+        for (const i of this.items) if (["queued", "uploading"].includes(i.status)) i.status = "paused";
+        this._toast(this.t("err_signed_out"));
+        this._emit();
+        return;
+      }
+      this._drop(it);
+      this._toast(err instanceof UploadError ? err.message : this.t("upload_failed", it.name, err?.message || String(err)));
+      this._emit("failed", { entryId: it.entryId });
+      this._emit();
+    } finally {
+      it.active = false;
+      it.abort = null;
+    }
+  }
+
+  /** Wait before the next try; retryNow() ends the wait early. */
+  async _pause(it, attempt) {
+    const seconds = RETRY_DELAYS[Math.min(attempt, RETRY_DELAYS.length - 1)];
+    it.status = "retrying";
+    it.retryAt = Date.now() + seconds * 1000;
+    this._emit();
+    await new Promise((resolve) => {
+      const timer = setTimeout(done, seconds * 1000);
+      function done() {
+        clearTimeout(timer);
+        it.wake = null;
+        resolve();
+      }
+      it.wake = done;
+    });
+    if (it.status === "retrying") {
+      it.status = "uploading";
+      this._emit();
+    }
+  }
+
+  async _request(path, init) {
+    const ctrl = new AbortController();
+    const timer = setTimeout(() => ctrl.abort(), REQUEST_TIMEOUT_MS);
+    init.signal?.addEventListener("abort", () => ctrl.abort());
+    try {
+      return await this._hass.fetchWithAuth(path, { ...init, signal: ctrl.signal });
+    } finally {
+      clearTimeout(timer);
+    }
+  }
+
+  /** Send one request for this file. Returns true once the file is in the station. */
+  async _step(it, blob) {
+    const base = `/api/stations/${it.entryId}/uploads`;
+    const ctrl = new AbortController();
+    it.abort = ctrl;
+    const send = async (path, init) => {
+      let resp;
+      try {
+        resp = await this._request(path, { ...init, signal: ctrl.signal });
+      } catch (err) {
+        throw new RetryableError(err?.message || "network"); // offline, dropped, timed out
+      }
+      if (resp.status >= 500 || resp.status === 408 || resp.status === 429) throw new RetryableError(String(resp.status));
+      if (resp.status === 401 || resp.status === 403) throw new SignedOutError();
+      return resp;
+    };
+    const restart = () => {
+      // The server no longer knows this upload (Home Assistant restarted, or it expired).
+      if (++it.restarts > MAX_RESTARTS) throw new UploadError(this.t("up_lost", it.name));
+      Object.assign(it, { uploadId: null, offset: 0, pct: 0 });
+      this._save(it);
+    };
+    const json = (resp) => resp.json().catch(() => ({}));
+
+    if (!it.uploadId) {
+      const resp = await send(base, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ filename: it.name, size: blob.size }),
+      });
+      if (!resp.ok) throw new UploadError(await uploadErrorMessage(resp, it.name, this._lang));
+      const body = await json(resp);
+      Object.assign(it, { uploadId: body.upload_id, chunk: body.chunk_size, offset: 0 });
+      this._save(it);
+      return false;
+    }
+    const url = `${base}/${it.uploadId}`;
+    if (it.offset < blob.size) {
+      const resp = await send(`${url}?offset=${it.offset}`, { method: "PUT", body: blob.slice(it.offset, it.offset + it.chunk) });
+      if (resp.status === 404) return restart(), false;
+      // 409: a piece landed but its answer got lost; continue where the server is.
+      if (!resp.ok && resp.status !== 409) throw new UploadError(await uploadErrorMessage(resp, it.name, this._lang));
+      const received = (await json(resp)).received;
+      if (typeof received === "number") it.offset = received;
+      it.pct = this._pctOf(it);
+      this._save(it);
+      this._emit("progress", { id: it.id });
+      return false;
+    }
+    const resp = await send(url, { method: "POST" });
+    if (resp.status === 404) return restart(), false;
+    if (resp.status === 409) {
+      const received = (await json(resp)).received;
+      if (typeof received === "number" && received < it.offset) it.offset = received;
+      else restart();
+      this._save(it);
+      return false;
+    }
+    if (!resp.ok) throw new UploadError(await uploadErrorMessage(resp, it.name, this._lang));
+    return true;
+  }
+}
+
+/** Turn a refused upload into a message a person can act on. */
+async function uploadErrorMessage(resp, name, lang) {
+  const t = (key, ...args) => translate(lang, key, ...args);
+  if (resp.status === 413) return t("err_too_large", name, MAX_UPLOAD_MB);
+  if (resp.status === 415) return t("err_wrong_type", name);
+  try {
+    const msg = (await resp.json()).message;
+    if (msg) return msg;
+  } catch (e) {
+    /* no JSON body */
+  }
+  return t("upload_failed", name, resp.status);
+}
+
+const uploadQueue = new UploadQueue();
+
 class StationsPanel extends HTMLElement {
   constructor() {
     super();
@@ -1080,12 +1572,10 @@ class StationsPanel extends HTMLElement {
     this._devConfig = null; // { deviceId, entities: [], fields: Set, note }
     this._openMore = new Set();
     this._lightbox = null; // file id
-    this._uploads = [];
-    this._uploadSeq = 0;
     this._loadToken = 0;
     this._useHaMarkdown = false;
     this._onBeforeUnload = (e) => {
-      if (this._isDirty() || this._wzDirty()) {
+      if (this._isDirty() || this._wzDirty() || uploadQueue.hasUnsaved()) {
         e.preventDefault();
         e.returnValue = "";
       }
@@ -1097,6 +1587,7 @@ class StationsPanel extends HTMLElement {
   set hass(hass) {
     const old = this._hass;
     this._hass = hass;
+    uploadQueue.setHass(hass);
     if (!old) {
       this._lang = (hass.locale?.language || hass.language || "en").toLowerCase().startsWith("nl") ? "nl" : "en";
       this._maybeStart();
@@ -1139,15 +1630,14 @@ class StationsPanel extends HTMLElement {
   }
 
   t(key, ...args) {
-    const dict = I18N[this._lang] || I18N.en;
-    const value = dict[key] ?? I18N.en[key] ?? key;
-    return typeof value === "function" ? value(...args) : value;
+    return translate(this._lang, key, ...args);
   }
 
   connectedCallback() {
     window.addEventListener("beforeunload", this._onBeforeUnload);
     window.addEventListener("keydown", this._onKey);
     this._connected = true;
+    this._offQueue = uploadQueue.subscribe((ev) => this._onQueue(ev));
     this._maybeStart();
   }
 
@@ -1155,6 +1645,8 @@ class StationsPanel extends HTMLElement {
     window.removeEventListener("beforeunload", this._onBeforeUnload);
     window.removeEventListener("keydown", this._onKey);
     this._connected = false;
+    this._offQueue?.();
+    this._offQueue = null;
     this._unsub?.then((unsub) => unsub()).catch(() => {});
     this._unsub = null;
   }
@@ -1252,6 +1744,7 @@ class StationsPanel extends HTMLElement {
   }
 
   _onRemoteChange(msg) {
+    uploadQueue.refresh(); // another tab may have finished an upload
     if (!this._view || this._view.name === "wizard") return;
     if (this._view.name === "detail" && msg.entry_id && msg.entry_id !== this._view.id) return;
     clearTimeout(this._reloadTimer);
@@ -2010,7 +2503,7 @@ class StationsPanel extends HTMLElement {
         }${f.caption && isImage ? `<span class="cap">${esc(f.caption)}</span>` : ""}</button>`;
       })
       .join("");
-    const pending = this._uploads.map((u) => `<div class="tile pending" id="up-${u.id}">${esc(this._uploadText(u))}</div>`).join("");
+    const pending = uploadQueue.forEntry(this._detail.entry_id).map((u) => this._uploadTile(u)).join("");
     return `
       <div class="card-head"><h2><ha-icon icon="mdi:image-multiple-outline"></ha-icon>${esc(this.t("files"))} <span class="count">${files.length}</span></h2>
         <button class="btn text" data-action="upload"><ha-icon icon="mdi:upload"></ha-icon>${esc(this.t("upload"))}</button>
@@ -2942,6 +3435,12 @@ class StationsPanel extends HTMLElement {
     const d = this._detail;
     if (this._wizard && action.startsWith("wz-") && (await this._wzClick(action, el))) return;
     switch (action) {
+      case "upload-cancel":
+        uploadQueue.cancel(el.dataset.id);
+        break;
+      case "upload-retry":
+        uploadQueue.retryNow(el.dataset.id);
+        break;
       case "img-retry":
         // Inside a station card (a link) or a gallery tile: retry only.
         e.preventDefault();
@@ -3395,109 +3894,85 @@ class StationsPanel extends HTMLElement {
     }
   }
 
-  _uploadText(u) {
-    return u.pct > 0 ? this.t("uploading_pct", u.name, u.pct) : this.t("uploading", u.name);
-  }
-
-  _setUploadProgress(u, pct) {
-    u.pct = pct;
-    const el = this.shadowRoot.getElementById(`up-${u.id}`);
-    if (el) el.textContent = this._uploadText(u);
-  }
-
-  /** Turn a failed response into a message a person can act on. */
-  async _uploadError(resp, name) {
-    if (resp.status === 401 || resp.status === 403) return this.t("err_signed_out");
-    if (resp.status === 413) return this.t("err_too_large", name, MAX_UPLOAD_MB);
-    if (resp.status === 415) return this.t("err_wrong_type", name);
-    try {
-      const msg = (await resp.json()).message;
-      if (msg) return msg;
-    } catch (e) {
-      /* no JSON body */
-    }
-    return resp.status >= 500 || resp.status === 0 ? this.t("err_connection", name) : `${this.t("upload_failed", name, resp.status)}`;
-  }
-
-  /**
-   * fetch with retries for a dropped connection or a proxy hiccup (502-504).
-   * Returns the response, or throws UploadError with a readable message.
-   */
-  async _uploadFetch(url, init, name) {
-    const delays = [1000, 3000, 8000];
-    for (let attempt = 0; ; attempt++) {
-      let resp;
-      try {
-        resp = await this._hass.fetchWithAuth(url, init);
-      } catch (err) {
-        resp = null;
-      }
-      if (resp && ![502, 503, 504].includes(resp.status)) return resp;
-      if (attempt >= delays.length) {
-        throw new UploadError(this.t("err_connection", name));
-      }
-      await new Promise((r) => setTimeout(r, delays[attempt]));
+  _uploadStatus(u) {
+    switch (u.status) {
+      case "preparing":
+        return this.t("up_preparing");
+      case "queued":
+        return this.t("up_queued");
+      case "retrying":
+        return navigator.onLine === false
+          ? this.t("up_offline")
+          : this.t("up_retrying", Math.max(1, Math.ceil((u.retryAt - Date.now()) / 1000)));
+      case "elsewhere":
+        return this.t("up_elsewhere");
+      case "paused":
+        return this.t("up_paused");
+      default:
+        return u.pct > 0 ? this.t("up_uploading_pct", u.pct) : this.t("up_uploading");
     }
   }
 
-  /** Send one file in pieces: start, pieces in order, finish. */
-  async _uploadOne(entryId, file, u) {
-    const name = file.name;
-    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new UploadError(this.t("err_too_large", name, MAX_UPLOAD_MB));
-    if (!UPLOAD_TYPES.includes(file.type) && !/\.(txt|jpe?g|png|gif|webp|pdf)$/i.test(name)) {
-      throw new UploadError(this.t("err_wrong_type", name));
-    }
-    const base = `/api/stations/${entryId}/uploads`;
-    let resp = await this._uploadFetch(
-      base,
-      { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ filename: name, size: file.size }) },
-      name
-    );
-    if (!resp.ok) throw new UploadError(await this._uploadError(resp, name));
-    const { upload_id: id, chunk_size: chunk } = await resp.json();
-    const url = `${base}/${id}`;
-    try {
-      let offset = 0;
-      while (offset < file.size) {
-        resp = await this._uploadFetch(`${url}?offset=${offset}`, { method: "PUT", body: file.slice(offset, offset + chunk) }, name);
-        if (resp.status === 409) {
-          // A piece landed but its answer got lost: continue where the server is.
-          offset = (await resp.json()).received;
-        } else if (!resp.ok) {
-          throw new UploadError(await this._uploadError(resp, name));
-        } else {
-          offset = (await resp.json()).received;
-        }
-        this._setUploadProgress(u, Math.min(99, Math.round((offset / file.size) * 100)));
+  _uploadTile(u) {
+    const icon =
+      // One icon for retrying and offline: offline, a new icon can't be fetched.
+      u.status === "retrying"
+        ? "mdi:cloud-refresh-outline"
+        : u.status === "paused"
+          ? "mdi:account-alert-outline"
+          : "mdi:cloud-upload-outline";
+    return `<div class="tile pending" id="up-${esc(u.id)}" data-status="${esc(u.status)}">
+      <span class="up-name"><ha-icon icon="${icon}"></ha-icon><span>${esc(u.name)}</span></span>
+      <span class="up-status">${esc(this._uploadStatus(u))}</span>
+      ${
+        u.status === "retrying"
+          ? `<button class="btn text up-retry" data-action="upload-retry" data-id="${esc(u.id)}">${esc(this.t("up_retry_now"))}</button>`
+          : `<span class="up-bar"><span style="width:${u.pct || 0}%"></span></span>`
       }
-      resp = await this._uploadFetch(url, { method: "POST" }, name);
-      if (!resp.ok) throw new UploadError(await this._uploadError(resp, name));
-    } catch (err) {
-      this._hass.fetchWithAuth(url, { method: "DELETE" }).catch(() => {});
-      throw err;
+      <button class="icon-btn up-cancel" data-action="upload-cancel" data-id="${esc(u.id)}" title="${esc(this.t("up_cancel"))}" aria-label="${esc(this.t("up_cancel"))}"><ha-icon icon="mdi:close"></ha-icon></button>
+    </div>`;
+  }
+
+  _onQueue(ev) {
+    if (this._view?.name !== "detail" || !this._detail) return;
+    const mine = (id) => uploadQueue.items.find((i) => i.id === id && i.entryId === this._detail.entry_id);
+    if (ev.type === "tick" || ev.type === "progress") {
+      // Update in place: re-rendering every second would flicker.
+      const list = ev.type === "progress" ? [mine(ev.id)].filter(Boolean) : uploadQueue.forEntry(this._detail.entry_id);
+      for (const u of list) {
+        const el = this.shadowRoot.getElementById(`up-${u.id}`);
+        if (!el) continue;
+        el.querySelector(".up-status").textContent = this._uploadStatus(u);
+        const bar = el.querySelector(".up-bar > span");
+        if (bar) bar.style.width = `${u.pct || 0}%`;
+      }
+      return;
+    }
+    if (ev.type === "done" || ev.type === "failed") {
+      if (ev.entryId === this._detail.entry_id) this._load();
+      return;
+    }
+    this._renderFiles();
+  }
+
+  _checkUpload(file) {
+    if (file.size > MAX_UPLOAD_MB * 1024 * 1024) throw new UploadError(this.t("err_too_large", file.name, MAX_UPLOAD_MB));
+    if (!UPLOAD_TYPES.includes(file.type) && !/\.(txt|jpe?g|png|gif|webp|pdf)$/i.test(file.name)) {
+      throw new UploadError(this.t("err_wrong_type", file.name));
     }
   }
 
   async _uploadFiles(files) {
     const d = this._detail;
     if (!d || !files.length) return;
-    const queued = files.map((original) => ({ original, u: { id: ++this._uploadSeq, name: original.name, pct: 0 } }));
-    this._uploads.push(...queued.map((q) => q.u));
-    this._renderFiles();
-    const failed = [];
-    for (const { original, u } of queued) {
-      try {
-        const file = await this._prepareImage(original);
-        await this._uploadOne(d.entry_id, file, u);
-      } catch (err) {
-        failed.push(err instanceof UploadError ? err.message : this.t("upload_failed", original.name, err?.message || String(err)));
-      } finally {
-        this._uploads.splice(this._uploads.indexOf(u), 1);
-      }
-    }
-    if (failed.length === 1 && files.length === 1) this._toast(failed[0]);
-    else if (failed.length) this._toast(this.t("upload_summary", files.length - failed.length, files.length, failed.join(" · ")));
-    await this._load();
+    const refused = await uploadQueue.add(
+      d.entry_id,
+      files,
+      (f) => this._prepareImage(f),
+      (f) => this._checkUpload(f)
+    );
+    if (refused.length === 1 && files.length === 1) this._toast(refused[0]);
+    else if (refused.length) this._toast(this.t("upload_summary", files.length - refused.length, files.length, refused.join(" · ")));
   }
 }
 

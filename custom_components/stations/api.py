@@ -720,6 +720,7 @@ async def _async_store_upload(
     caption: str,
     hass_user: Any,
     data: bytes,
+    file_id: str | None = None,
 ) -> web.Response:
     """Check the type of a received file and add it to the station."""
     content_type = _sniff(data[:4096])
@@ -729,7 +730,7 @@ async def _async_store_upload(
         )
     record = await _data(hass).store.async_add_file(
         entry_id,
-        secrets.token_hex(8),
+        file_id or secrets.token_hex(8),
         filename=filename,
         content_type=content_type,
         ext=ALLOWED_CONTENT_TYPES[content_type],
@@ -761,6 +762,12 @@ class _Upload:
     path: Path
     received: int = 0
     touched: float = 0.0
+    # Set while the finished file is being stored, and the file id once it is.
+    # A finished upload is kept until it expires, so that finishing again
+    # (the panel retries when the answer got lost) returns the same file
+    # instead of adding it twice.
+    finishing: bool = False
+    file_id: str | None = None
 
 
 def uploads_dir(hass: HomeAssistant) -> Path:
@@ -860,7 +867,7 @@ class StationsUploadView(HomeAssistantView):
     async def put(self, request: web.Request, entry_id: str, upload_id: str) -> web.Response:
         """Append a piece at ?offset=N (must equal what was received so far)."""
         hass: HomeAssistant = request.app["hass"]
-        if (up := self._get(request, entry_id, upload_id)) is None:
+        if (up := self._get(request, entry_id, upload_id)) is None or up.finishing:
             return self._gone()
         try:
             offset = int(request.query.get("offset", "-1"))
@@ -892,19 +899,47 @@ class StationsUploadView(HomeAssistantView):
         hass: HomeAssistant = request.app["hass"]
         if (up := self._get(request, entry_id, upload_id)) is None:
             return self._gone()
+        if up.file_id is not None:
+            # Finished before; the panel did not get the answer.
+            return self.json({"id": up.file_id})
+        if up.finishing:
+            return self.json_message(
+                "Still saving this file. Try again in a moment.",
+                HTTPStatus.SERVICE_UNAVAILABLE,
+            )
         if up.received != up.size:
             return self.json(
                 {"message": f"{up.filename} is incomplete", "received": up.received},
                 HTTPStatus.CONFLICT,
             )
-        _uploads(hass).pop(upload_id, None)
-        data = await hass.async_add_executor_job(up.path.read_bytes)
-        await hass.async_add_executor_job(lambda: up.path.unlink(missing_ok=True))
-        if _station(hass, entry_id) is None:
-            return self.json_message("Station not found", HTTPStatus.NOT_FOUND)
-        return await _async_store_upload(
-            self, hass, entry_id, up.filename, up.caption, request.get("hass_user"), data
-        )
+        up.finishing = True
+        try:
+            data = await hass.async_add_executor_job(up.path.read_bytes)
+            await hass.async_add_executor_job(lambda: up.path.unlink(missing_ok=True))
+            if _station(hass, entry_id) is None:
+                _uploads(hass).pop(upload_id, None)
+                return self.json_message("Station not found", HTTPStatus.NOT_FOUND)
+            file_id = secrets.token_hex(8)
+            resp = await _async_store_upload(
+                self,
+                hass,
+                entry_id,
+                up.filename,
+                up.caption,
+                request.get("hass_user"),
+                data,
+                file_id,
+            )
+        except BaseException:
+            up.finishing = False
+            raise
+        if resp.status == HTTPStatus.CREATED:
+            up.file_id = file_id
+            up.touched = time.monotonic()
+        else:
+            # Refused (wrong type): nothing to keep.
+            _uploads(hass).pop(upload_id, None)
+        return resp
 
     async def delete(self, request: web.Request, entry_id: str, upload_id: str) -> web.Response:
         """Cancel an upload."""
