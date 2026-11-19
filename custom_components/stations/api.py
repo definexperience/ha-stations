@@ -47,6 +47,8 @@ if TYPE_CHECKING:
     from .station import Station
 
 SIGNED_URL_LIFETIME = timedelta(hours=24)
+# Hand out a cached signed URL only while it is valid for at least this long.
+SIGNED_URL_REUSE_MIN_LEFT = SIGNED_URL_LIFETIME.total_seconds() / 2
 
 ERR_NOT_FOUND = "not_found"
 ERR_CONFLICT = "conflict"
@@ -71,9 +73,30 @@ def _file_url(entry_id: str, file_id: str) -> str:
 
 
 def _signed(hass: HomeAssistant, connection: websocket_api.ActiveConnection, path: str) -> str:
-    return async_sign_path(
+    """Return a signed URL for path, the same one on every call for a while.
+
+    A fresh signature on every refresh would give each photo a new URL, so the
+    browser could never use its cached copy. A signed URL is therefore reused
+    (per login, per path) until it has less than half its lifetime left; the
+    files behind these URLs never change (a new upload gets a new id).
+    """
+    cache: dict[tuple[str | None, str], tuple[str, float]] = hass.data.setdefault(
+        f"{DOMAIN}_signed", {}
+    )
+    key = (connection.refresh_token_id, path)
+    now = time.monotonic()
+    hit = cache.get(key)
+    if hit is not None and hit[1] - now > SIGNED_URL_REUSE_MIN_LEFT:
+        return hit[0]
+    if len(cache) > 5000:
+        # Forget URLs that are past reuse (deleted files, old logins).
+        for k in [k for k, (_, exp) in cache.items() if exp - now <= SIGNED_URL_REUSE_MIN_LEFT]:
+            del cache[k]
+    url = async_sign_path(
         hass, path, SIGNED_URL_LIFETIME, refresh_token_id=connection.refresh_token_id
     )
+    cache[key] = (url, now + SIGNED_URL_LIFETIME.total_seconds())
+    return url
 
 
 def _public_file(

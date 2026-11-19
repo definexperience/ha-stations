@@ -523,6 +523,21 @@ async def test_upload_serve_delete(
     assert "authSig=" in url
     assert result["cover_url"]
 
+    # Refreshing gives the same URL, so the browser can use its cached copy...
+    await ws.send_json_auto_id({"type": "stations/get", "entry_id": entry.entry_id})
+    again = (await ws.receive_json())["result"]
+    assert again["files"][0]["url"] == url
+    assert again["files"][0]["small_url"] == result["files"][0]["small_url"]
+    # ...until less than half its lifetime is left: then a fresh one.
+    from custom_components.stations import api
+
+    cache = hass.data[f"{DOMAIN}_signed"]
+    for key, (cached, expires) in list(cache.items()):
+        cache[key] = ("/old", expires - api.SIGNED_URL_REUSE_MIN_LEFT - 1)
+    await ws.send_json_auto_id({"type": "stations/get", "entry_id": entry.entry_id})
+    fresh = (await ws.receive_json())["result"]["files"][0]["url"]
+    assert fresh != "/old" and "authSig=" in fresh
+
     anon = await hass_client_no_auth()
     resp = await anon.get(url)
     assert resp.status == HTTPStatus.OK
